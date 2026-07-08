@@ -119,19 +119,33 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH — update order status (admin only)
+// PATCH — update order status (admin or owner)
 export async function PATCH(request: NextRequest) {
   try {
-    const isAdmin = await isAdminAuthenticated();
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { id, userId, ...updates } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Order ID required" }, { status: 400 });
+    }
+
+    const isAdmin = await isAdminAuthenticated();
+
+    if (!isAdmin) {
+      if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      // Verify the user owns this order
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .select("user_id")
+        .eq("id", id)
+        .single();
+
+      if (orderError || order.user_id !== userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
 
     // Map camelCase to snake_case for DB

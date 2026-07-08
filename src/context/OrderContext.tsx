@@ -140,10 +140,13 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const updateOrder = useCallback(async (id: string, updates: Partial<Order>) => {
     // Update in Supabase
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
       await fetch("/api/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...updates }),
+        body: JSON.stringify({ id, userId, ...updates }),
       });
     } catch (e) {
       console.error("Failed to update order in Supabase:", e);

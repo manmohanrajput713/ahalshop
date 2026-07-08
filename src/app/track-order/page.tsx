@@ -10,6 +10,8 @@ import { Search, Package, Truck, MapPin, CheckCircle2, Clock, CircleDot, ArrowLe
 import Link from "next/link";
 import AuthGuard from "@/components/auth/AuthGuard";
 
+import { supabase } from "@/lib/supabase";
+
 const STATUS_STEPS = [
   { key: "placed", label: "Order Placed", icon: ShoppingBag },
   { key: "processing", label: "Processing", icon: Box },
@@ -39,14 +41,16 @@ function TrackOrderContent() {
   const handleCancelOrder = async (orderId: string, awbCode?: string) => {
     setCancellingId(orderId);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
       if (awbCode) {
         await fetch("/api/shiprocket/cancel", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ awbs: [awbCode] }),
+          body: JSON.stringify({ awbs: [awbCode], userId }),
         });
       }
-      await updateOrder(orderId, { status: "cancelled" });
       await removePendingCoins(orderId);
       await refreshOrders();
       if (trackedOrder?.id === orderId) {
