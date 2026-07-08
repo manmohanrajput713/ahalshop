@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 // Use service role key for server-side operations
 const supabase = createClient(
@@ -7,11 +8,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// GET — fetch all orders (for admin) or single order by id
+// GET — fetch all orders (for admin) or single order by id or by user_id
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get("id");
+    const userId = searchParams.get("user_id");
 
     if (orderId) {
       const { data, error } = await supabase
@@ -23,10 +25,37 @@ export async function GET(request: NextRequest) {
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 404 });
       }
+
+      // Verify ownership: only the order owner or an admin can view it
+      if (userId && data.user_id !== userId) {
+        const isAdmin = await isAdminAuthenticated();
+        if (!isAdmin) {
+          return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+      }
+
       return NextResponse.json(data);
     }
 
-    // Fetch all orders (admin), sorted newest first
+    if (userId) {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json(data || []);
+    }
+
+    // Fetch all orders (admin only), sorted newest first
+    const isAdmin = await isAdminAuthenticated();
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { data, error } = await supabase
       .from("orders")
       .select("*")
@@ -49,6 +78,7 @@ export async function POST(request: NextRequest) {
 
     const orderRow = {
       id: body.id,
+      user_id: body.user_id || null,
       customer_first_name: body.address.firstName,
       customer_last_name: body.address.lastName,
       customer_phone: body.address.phone,
@@ -89,9 +119,14 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH — update order status
+// PATCH — update order status (admin only)
 export async function PATCH(request: NextRequest) {
   try {
+    const isAdmin = await isAdminAuthenticated();
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { id, ...updates } = body;
 
@@ -124,9 +159,14 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// DELETE — remove all orders
+// DELETE — remove all orders (admin only)
 export async function DELETE() {
   try {
+    const isAdmin = await isAdminAuthenticated();
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { error } = await supabase
       .from("orders")
       .delete()

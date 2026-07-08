@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, LogOut, Settings, Package } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, LogOut, Settings, Package, Home } from "lucide-react";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -12,13 +12,14 @@ export default function Sidebar() {
     { href: "/admin/orders", label: "Orders", icon: Package },
     { href: "/admin/products", label: "Products", icon: ShoppingBag },
     { href: "/admin/settings", label: "Settings", icon: Settings },
+    { href: "/", label: "Back to Store", icon: Home },
   ];
 
   return (
     <aside className="w-64 bg-card border-r border-border flex flex-col min-h-screen">
       <div className="p-6 border-b border-border">
         <Link href="/admin" className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <span>ASHAL Admin</span>
+          <span>ASHL Admin</span>
         </Link>
       </div>
 

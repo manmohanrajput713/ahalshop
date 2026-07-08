@@ -228,7 +228,7 @@ export default function AddressMap({ onLocationSelect, initialLat, initialLng }:
           type="button"
           onClick={handleUseMyLocation}
           disabled={isLocating}
-          className="absolute top-3 right-3 z-[1000] bg-card border border-border px-3 py-2 rounded-lg shadow-md flex items-center gap-2 text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-60"
+          className="md:hidden absolute top-3 right-3 z-[1000] bg-card border border-border px-3 py-2 rounded-lg shadow-md flex items-center gap-2 text-xs text-foreground hover:bg-secondary transition-colors disabled:opacity-60"
         >
           {isLocating ? (
             <Loader2 size={14} className="animate-spin" />

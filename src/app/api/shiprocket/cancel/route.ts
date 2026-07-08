@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getShypBuddyHeaders, SHYPBUDDY_SELLER_BASE } from "@/lib/shiprocket";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
-// Cancel ShypBuddy order by AWB
+// Cancel ShypBuddy order by AWB (admin only)
 export async function POST(request: NextRequest) {
   try {
+    const isAdmin = await isAdminAuthenticated();
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { awbs } = body;
 

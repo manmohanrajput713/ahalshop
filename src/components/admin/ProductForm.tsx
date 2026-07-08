@@ -65,9 +65,18 @@ export default function ProductForm({
         </div>
         <div className="col-span-2">
           <label className="block text-sm font-medium text-muted-foreground mb-1">
-            Product Image {isEditing && <span className="text-xs text-muted-foreground ml-2">(Leave empty to keep current)</span>}
+            Main Product Image {isEditing && <span className="text-xs text-muted-foreground ml-2">(Leave empty to keep current)</span>}
           </label>
           <input type="file" name="imageFile" accept="image/*" className="w-full bg-card border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer" />
+        </div>
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-muted-foreground mb-1">
+            Extra Carousel Images {isEditing && <span className="text-xs text-muted-foreground ml-2">(Leave empty to keep current)</span>}
+          </label>
+          <input type="file" name="extraImages" accept="image/*" multiple className="w-full bg-card border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer" />
+          {isEditing && initialData?.images && (
+            <input type="hidden" name="currentExtraImages" value={JSON.stringify(initialData.images)} />
+          )}
         </div>
         <div className="col-span-2">
           <label className="block text-sm font-medium text-muted-foreground mb-1">Alt Text</label>

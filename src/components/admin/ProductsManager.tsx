@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import ProductForm from "./ProductForm";
-import { Trash2, Plus, Edit } from "lucide-react";
+import { Trash2, Plus, Edit, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { deleteProduct } from "@/app/admin/(dashboard)/products/actions";
 
 export default function ProductsManager({ initialProducts }: { initialProducts: any[] }) {
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [productToDelete, setProductToDelete] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = (product: any) => {
     setEditingProduct(product);
@@ -97,17 +99,14 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <form action={async () => {
-                        await deleteProduct(product.id);
-                      }}>
-                        <button 
-                          type="submit"
-                          className="text-destructive hover:text-destructive/80 p-2 rounded hover:bg-destructive/10 transition-colors"
-                          title="Delete product"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </form>
+                      <button 
+                        type="button"
+                        onClick={() => setProductToDelete(product)}
+                        className="text-destructive hover:text-destructive/80 p-2 rounded hover:bg-destructive/10 transition-colors"
+                        title="Delete product"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -123,6 +122,52 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+            <h3 
+              className="text-xl font-normal text-foreground mb-3 flex items-center gap-2"
+              style={{ fontFamily: "var(--font-lora), serif" }}
+            >
+              <Trash2 className="text-destructive" size={20} />
+              Delete Product
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Are you sure you want to delete <span className="font-medium text-foreground">"{productToDelete.name}"</span>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setProductToDelete(null)}
+                disabled={isDeleting}
+                className="px-5 py-2.5 text-xs tracking-wider uppercase font-medium text-foreground hover:bg-muted border border-border rounded-md transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    await deleteProduct(productToDelete.id);
+                  } finally {
+                    setIsDeleting(false);
+                    setProductToDelete(null);
+                  }
+                }}
+                disabled={isDeleting}
+                className="px-5 py-2.5 text-xs tracking-wider uppercase font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Deleting...</>
+                ) : (
+                  "Delete"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

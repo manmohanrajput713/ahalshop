@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { verifyAdminSessionToken } from "@/lib/admin-auth";
 
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -6,9 +7,10 @@ export function proxy(request: NextRequest) {
   const isResetPasswordPath = pathname.startsWith("/admin/reset-password");
 
   if (isAdminPath && !isResetPasswordPath) {
-    const hasAdminSession = request.cookies.get("admin_session")?.value === "true";
+    const token = request.cookies.get("admin_session")?.value;
+    const hasValidSession = verifyAdminSessionToken(token);
 
-    if (!hasAdminSession) {
+    if (!hasValidSession) {
       return Response.redirect(new URL("/", request.url));
     }
   }

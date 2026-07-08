@@ -3,15 +3,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
-
-// Hash password function using Web Crypto API to match the saved hashes
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+import {
+  createAdminSessionToken,
+  hashPassword,
+} from "@/lib/admin-auth";
 
 export async function adminLogin(formData: FormData) {
   const username = formData.get("username");
@@ -38,18 +33,16 @@ export async function adminLogin(formData: FormData) {
       if (hashedPassword === adminSetting.value) {
         isValid = true;
       }
-    } else {
-      // Fallback to hardcoded password if no password is set in the database yet
-      if (password === "admin@123") {
-        isValid = true;
-      }
     }
+    // NOTE: Hardcoded fallback password removed for security.
+    // If no password exists in the database, use the Forgot Password flow.
 
     if (isValid) {
       const cookieStore = await cookies();
-      cookieStore.set("admin_session", "true", {
+      cookieStore.set("admin_session", createAdminSessionToken(), {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
         maxAge: 60 * 60 * 24 * 7, // 1 week
         path: "/",
       });

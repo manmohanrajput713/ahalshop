@@ -11,7 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import { useState, useEffect } from "react";
-import { ArrowLeft, ShieldCheck, Truck, CreditCard, Banknote, ChevronRight, Loader2, XCircle, Package, MapPin, Tag, Coins } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Truck, CreditCard, Banknote, ChevronRight, Loader2, XCircle, Package, MapPin, Tag, Coins, Smartphone, Landmark } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import AuthModal from "@/components/auth/AuthModal";
 
@@ -37,8 +37,9 @@ export default function CheckoutPage() {
   const { addOrder } = useOrders();
   const { earnCoins, redeemCoins, coinsToEarn, addPendingCoins } = useAshlCoins();
 
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "upi" | "card">("cod");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "upi" | "card" | "netbanking">("cod");
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [showAnimation, setShowAnimation] = useState(true);
   const [placedOrderId, setPlacedOrderId] = useState<string>("");
   const [earnedCoinsAmount, setEarnedCoinsAmount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -68,6 +69,17 @@ export default function CheckoutPage() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (orderPlaced) {
+      window.scrollTo(0, 0);
+      setShowAnimation(true);
+      const timer = setTimeout(() => {
+        setShowAnimation(false);
+      }, 2200);
+      return () => clearTimeout(timer);
+    }
+  }, [orderPlaced]);
 
   const shippingFee = discountedTotal >= 499 ? 0 : 49;
   const finalTotal = discountedTotal + shippingFee;
@@ -301,60 +313,118 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col">
         <Header />
-        <main className="flex-1 pt-32 pb-24 max-w-2xl mx-auto px-6 lg:px-12 w-full text-center">
-          <div className="bg-card border border-border rounded-xl p-12">
-            <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShieldCheck size={36} className="text-accent" />
+        <main className="flex-1 pt-32 pb-24 max-w-2xl mx-auto px-6 lg:px-12 w-full flex items-center justify-center">
+          {showAnimation ? (
+            <div className="flex flex-col items-center justify-center p-12 animate-in fade-in duration-300">
+              <style dangerouslySetInnerHTML={{ __html: `
+                .checkmark__circle {
+                  stroke-dasharray: 166;
+                  stroke-dashoffset: 166;
+                  stroke-width: 2;
+                  stroke-miterlimit: 10;
+                  stroke: #10B981;
+                  fill: none;
+                  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+                }
+                .checkmark {
+                  width: 80px;
+                  height: 80px;
+                  border-radius: 50%;
+                  display: block;
+                  stroke-width: 2;
+                  stroke: #fff;
+                  stroke-miterlimit: 10;
+                  box-shadow: inset 0px 0px 0px #10B981;
+                  animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s forwards;
+                }
+                .checkmark__check {
+                  transform-origin: 50% 50%;
+                  stroke-dasharray: 48;
+                  stroke-dashoffset: 48;
+                  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+                }
+                @keyframes stroke {
+                  100% {
+                    stroke-dashoffset: 0;
+                  }
+                }
+                @keyframes scale {
+                  0%, 100% {
+                    transform: none;
+                  }
+                  50% {
+                    transform: scale3d(1.1, 1.1, 1);
+                  }
+                }
+                @keyframes fill {
+                  100% {
+                    box-shadow: inset 0px 0px 0px 40px #10B981;
+                  }
+                }
+              `}} />
+              <svg className="checkmark mb-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle className="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                <path className="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+              </svg>
+              <h1 className="text-2xl font-normal text-foreground" style={{ fontFamily: "var(--font-lora), serif" }}>
+                Order Confirmed!
+              </h1>
             </div>
-            <h1
-              className="text-3xl font-normal text-foreground mb-4"
-              style={{ fontFamily: "var(--font-lora), serif" }}
-            >
-              Order Placed <em className="italic">Successfully!</em>
-            </h1>
-            <p className="text-sm text-muted-foreground mb-2">
-              Thank you for shopping with ASHL Herbal.
-            </p>
-            <p className="text-sm text-muted-foreground mb-6">
-              Your order confirmation will be sent to your email shortly.
-            </p>
-            <p className="text-xs text-muted-foreground bg-accent/5 inline-block px-4 py-2 rounded-lg mb-4">
-              Order ID: <span className="font-medium text-foreground">#{placedOrderId}</span>
-            </p>
-            {earnedCoinsAmount > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8 inline-flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                  <Coins size={20} className="text-amber-600" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium text-amber-800">+{earnedCoinsAmount} ASHL Coins pending</p>
-                  <p className="text-[10px] text-amber-600">Coins will be credited after your order is delivered</p>
-                </div>
+          ) : (
+            <div className="bg-card border border-border rounded-xl p-12 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <ShieldCheck size={36} className="text-emerald-600" />
               </div>
-            )}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href={`/track-order?id=${placedOrderId}`}
-                className="inline-flex items-center gap-2 bg-accent text-accent-foreground uppercase tracking-[0.15em] text-xs px-8 py-4 hover:bg-accent/90 transition-colors"
+              <h1
+                className="text-3xl font-normal text-foreground mb-4"
+                style={{ fontFamily: "var(--font-lora), serif" }}
               >
-                <Package size={14} /> Track Your Order
-              </Link>
-              <Link
-                href="/shop"
-                className="inline-flex items-center gap-2 bg-primary text-primary-foreground uppercase tracking-[0.15em] text-xs px-8 py-4 hover:bg-primary/90 transition-colors"
-              >
-                Continue Shopping
-              </Link>
+                Order Placed <em className="italic">Successfully!</em>
+              </h1>
+              <p className="text-sm text-muted-foreground mb-2">
+                Thank you for shopping with ASHL Herbal.
+              </p>
+              <p className="text-sm text-muted-foreground mb-6">
+                Your order confirmation will be sent to your email shortly.
+              </p>
+              <p className="text-xs text-muted-foreground bg-accent/5 inline-block px-4 py-2 rounded-lg mb-4">
+                Order ID: <span className="font-medium text-foreground">#{placedOrderId}</span>
+              </p>
+              {earnedCoinsAmount > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8 inline-flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                    <Coins size={20} className="text-amber-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-amber-800">+{earnedCoinsAmount} ASHL Coins pending</p>
+                    <p className="text-[10px] text-amber-600">Coins will be credited after your order is delivered</p>
+                  </div>
+                </div>
+              )}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link
+                  href={`/track-order?id=${placedOrderId}`}
+                  className="inline-flex items-center gap-2 bg-accent text-accent-foreground uppercase tracking-[0.15em] text-xs px-8 py-4 hover:bg-accent/90 transition-colors"
+                >
+                  <Package size={14} /> Track Your Order
+                </Link>
+                <Link
+                  href="/shop"
+                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground uppercase tracking-[0.15em] text-xs px-8 py-4 hover:bg-primary/90 transition-colors"
+                >
+                  Continue Shopping
+                </Link>
+              </div>
+              <div className="mt-6">
+                <Link
+                  href="/orders"
+                  className="text-xs uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors border-b border-transparent hover:border-foreground pb-0.5"
+                >
+                  View All Orders
+                </Link>
+              </div>
             </div>
-            <div className="mt-6">
-              <Link
-                href="/orders"
-                className="text-xs uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors border-b border-transparent hover:border-foreground pb-0.5"
-              >
-                View All Orders
-              </Link>
-            </div>
-          </div>
+          )}
         </main>
         <Footer />
       </div>
@@ -489,8 +559,9 @@ export default function CheckoutPage() {
                 <div className="space-y-3">
                   {[
                     { value: "cod" as const, label: "Cash on Delivery", desc: "Pay when you receive your order", icon: Banknote },
-                    { value: "upi" as const, label: "UPI", desc: "GPay, PhonePe, Paytm — via Razorpay", icon: CreditCard },
-                    { value: "card" as const, label: "Credit / Debit Card", desc: "Visa, Mastercard, Rupay — via Razorpay", icon: CreditCard },
+                    { value: "upi" as const, label: "UPI Apps", desc: "GPay, PhonePe, Paytm, BHIM", icon: Smartphone },
+                    { value: "card" as const, label: "Credit / Debit Card", desc: "Visa, Mastercard, Rupay", icon: CreditCard },
+                    { value: "netbanking" as const, label: "Net Banking", desc: "All major Indian banks supported", icon: Landmark },
                   ].map((method) => (
                     <label
                       key={method.value}
@@ -512,6 +583,37 @@ export default function CheckoutPage() {
                       <div>
                         <p className="text-sm font-medium text-foreground">{method.label}</p>
                         <p className="text-xs text-muted-foreground">{method.desc}</p>
+                        
+                        {/* Custom brand indicators for UPI and Bank */}
+                        {method.value === "upi" && (
+                          <div className="flex gap-2.5 mt-3 items-center">
+                            <div className="bg-white px-2 py-1 rounded border border-border h-6 flex items-center shadow-sm">
+                              <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" alt="GPay" className="h-3" />
+                            </div>
+                            <div className="bg-white px-2 py-1 rounded border border-border h-6 flex items-center shadow-sm">
+                              <img src="https://upload.wikimedia.org/wikipedia/commons/7/71/PhonePe_Logo.svg" alt="PhonePe" className="h-3.5" />
+                            </div>
+                            <div className="bg-white px-2 py-1 rounded border border-border h-6 flex items-center shadow-sm">
+                              <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Paytm_Logo_%28standalone%29.svg" alt="Paytm" className="h-2.5" />
+                            </div>
+                          </div>
+                        )}
+                        {method.value === "netbanking" && (
+                          <div className="flex gap-2 mt-3 items-center">
+                            <div className="bg-white px-2 py-1 rounded border border-border h-6 flex items-center shadow-sm">
+                              <img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/SBI-logo.svg" alt="SBI" className="h-3" />
+                            </div>
+                            <div className="bg-white px-2 py-1 rounded border border-border h-6 flex items-center shadow-sm">
+                              <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/HDFC_Bank_Logo.svg" alt="HDFC" className="h-3" />
+                            </div>
+                            <div className="bg-white px-2 py-1 rounded border border-border h-6 flex items-center shadow-sm">
+                              <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/ICICI_Bank_Logo.svg" alt="ICICI" className="h-3" />
+                            </div>
+                            <div className="bg-white px-2 py-1 rounded border border-border h-6 flex items-center shadow-sm">
+                              <img src="https://upload.wikimedia.org/wikipedia/commons/1/1a/Axis_Bank_logo.svg" alt="Axis" className="h-3" />
+                            </div>
+                          </div>
+                        )}
                       </div>
                       {method.value !== "cod" && (
                         <span className="ml-auto text-[10px] uppercase tracking-wider text-accent/60 bg-accent/5 px-2 py-1 rounded">Secure</span>

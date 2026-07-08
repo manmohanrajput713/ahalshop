@@ -13,19 +13,35 @@ async function handleImageUpload(file: File | null, defaultPath: string = "/prod
   
   try {
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
     
     // Generate unique filename to avoid overwriting
     const ext = file.name.split('.').pop() || 'jpg';
     const filename = `upload_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
-    const publicPath = `/products/${filename}`;
-    const uploadPath = path.join(process.cwd(), "public", "products", filename);
     
-    // Ensure directory exists
-    await fs.mkdir(path.dirname(uploadPath), { recursive: true });
-    await fs.writeFile(uploadPath, buffer);
+    // Use service role key if available to ensure upload succeeds regardless of RLS
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
     
-    return publicPath;
+    const { createClient } = await import("@supabase/supabase-js");
+    const adminSupabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data, error } = await adminSupabase.storage
+      .from("products")
+      .upload(filename, bytes, {
+        contentType: file.type || "image/jpeg",
+        upsert: false,
+      });
+
+    if (error) {
+      console.error("Supabase storage upload error:", error);
+      throw error;
+    }
+    
+    const { data: publicUrlData } = adminSupabase.storage
+      .from("products")
+      .getPublicUrl(filename);
+      
+    return publicUrlData.publicUrl;
   } catch (error) {
     console.error("Error uploading image:", error);
     return defaultPath;
@@ -63,6 +79,7 @@ export async function addProduct(formData: FormData) {
   const price = formData.get("price") as string;
   const badge = formData.get("badge") as string;
   const imageFile = formData.get("imageFile") as File | null;
+  const extraImageFiles = formData.getAll("extraImages") as File[];
   const alt = formData.get("alt") as string;
   const description = formData.get("description") as string;
   const size = formData.get("size") as string;
@@ -76,6 +93,12 @@ export async function addProduct(formData: FormData) {
 
   try {
     const imgPath = await handleImageUpload(imageFile);
+    
+    // Process extra images
+    const validExtraImageFiles = extraImageFiles.filter(f => f && f.size > 0);
+    const uploadedExtraImages = await Promise.all(
+      validExtraImageFiles.map(f => handleImageUpload(f))
+    );
 
     const { error } = await supabase.from("products").insert([
       {
@@ -84,6 +107,7 @@ export async function addProduct(formData: FormData) {
         price,
         badge: badge || null,
         img: imgPath,
+        images: uploadedExtraImages.length > 0 ? uploadedExtraImages : null,
         alt: alt || name,
         description: description || null,
         size: size || null,
@@ -127,6 +151,8 @@ export async function editProduct(formData: FormData) {
   const badge = formData.get("badge") as string;
   const imageFile = formData.get("imageFile") as File | null;
   const currentImg = formData.get("currentImg") as string;
+  const extraImageFiles = formData.getAll("extraImages") as File[];
+  const currentExtraImagesStr = formData.get("currentExtraImages") as string;
   const alt = formData.get("alt") as string;
   const description = formData.get("description") as string;
   const size = formData.get("size") as string;
@@ -144,12 +170,30 @@ export async function editProduct(formData: FormData) {
       ? await handleImageUpload(imageFile) 
       : currentImg;
 
+    // Handle extra images
+    let finalExtraImages = null;
+    try {
+      if (currentExtraImagesStr) {
+        finalExtraImages = JSON.parse(currentExtraImagesStr);
+      }
+    } catch (e) {
+      console.error("Failed to parse currentExtraImages", e);
+    }
+
+    const validExtraImageFiles = extraImageFiles.filter(f => f && f.size > 0);
+    if (validExtraImageFiles.length > 0) {
+      finalExtraImages = await Promise.all(
+        validExtraImageFiles.map(f => handleImageUpload(f))
+      );
+    }
+
     const { error } = await supabase.from("products").update({
       name,
       category,
       price,
       badge: badge || null,
       img: imgPath,
+      images: finalExtraImages,
       alt: alt || name,
       description: description || null,
       size: size || null,

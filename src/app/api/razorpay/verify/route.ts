@@ -20,7 +20,16 @@ export async function POST(request: NextRequest) {
       .update(body)
       .digest("hex");
 
-    const isValid = expectedSignature === razorpay_signature;
+    // Constant-time comparison to prevent timing attacks
+    let isValid = false;
+    try {
+      isValid = crypto.timingSafeEqual(
+        Buffer.from(expectedSignature, "hex"),
+        Buffer.from(razorpay_signature, "hex")
+      );
+    } catch {
+      isValid = false;
+    }
 
     if (isValid) {
       // Payment is verified — you can save the order to your database here

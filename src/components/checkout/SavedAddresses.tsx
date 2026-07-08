@@ -11,7 +11,7 @@ interface SavedAddressesProps {
 }
 
 export default function SavedAddresses({ selectedAddressId, onSelect }: SavedAddressesProps) {
-  const { addresses, addAddress, removeAddress, setDefaultAddress } = useAddresses();
+  const { addresses, addAddress, removeAddress, setDefaultAddress, updateAddress } = useAddresses();
   const [showNewForm, setShowNewForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -38,6 +38,29 @@ export default function SavedAddresses({ selectedAddressId, onSelect }: SavedAdd
           {addresses.map((addr) => {
             const Icon = labelIcons[addr.label] || MapPin;
             const isSelected = selectedAddressId === addr.id;
+
+            if (editingId === addr.id) {
+              return (
+                <div key={addr.id} className="bg-card border border-border rounded-lg p-6">
+                  <h3
+                    className="text-lg font-normal text-foreground mb-5 flex items-center gap-2"
+                    style={{ fontFamily: "var(--font-lora), serif" }}
+                  >
+                    <Edit3 size={18} className="text-accent" /> Edit Address
+                  </h3>
+                  <AddressForm
+                    initialData={addr}
+                    showSaveOption={false}
+                    saveLabel="Save Changes"
+                    onSave={(formData) => {
+                      updateAddress(addr.id, formData);
+                      setEditingId(null);
+                    }}
+                    onCancel={() => setEditingId(null)}
+                  />
+                </div>
+              );
+            }
 
             return (
               <div
@@ -95,8 +118,15 @@ export default function SavedAddresses({ selectedAddressId, onSelect }: SavedAdd
                   )}
                   <button
                     type="button"
+                    onClick={(e) => { e.stopPropagation(); setEditingId(addr.id); }}
+                    className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 ml-auto"
+                  >
+                    <Edit3 size={10} /> Edit
+                  </button>
+                  <button
+                    type="button"
                     onClick={(e) => { e.stopPropagation(); removeAddress(addr.id); }}
-                    className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1 ml-auto"
+                    className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
                   >
                     <Trash2 size={10} /> Remove
                   </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
-
+import { supabase } from "@/lib/supabase";
 export type OrderItem = {
   id: string | number;
   name: string;
@@ -29,7 +29,7 @@ export type Order = {
   subtotal: number;
   shippingFee: number;
   total: number;
-  paymentMethod: "cod" | "upi" | "card";
+  paymentMethod: "cod" | "upi" | "card" | "netbanking";
   razorpayPaymentId?: string;
   shiprocketOrderId?: number;
   shiprocketShipmentId?: number;
@@ -58,7 +58,17 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const refreshOrders = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/orders");
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      
+      if (!userId) {
+        setOrders([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const url = `/api/orders?user_id=${encodeURIComponent(userId)}`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         // Map Supabase snake_case to camelCase
@@ -107,12 +117,16 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     };
 
+    // Get the authenticated user's ID to tag the order
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+
     // Save to Supabase
     try {
       await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: newOrder.id, ...orderData }),
+        body: JSON.stringify({ id: newOrder.id, user_id: userId, ...orderData }),
       });
     } catch (e) {
       console.error("Failed to save order to Supabase:", e);

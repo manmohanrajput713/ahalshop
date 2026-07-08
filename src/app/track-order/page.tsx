@@ -3,9 +3,10 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useOrders, Order } from "@/context/OrderContext";
+import { useAshlCoins } from "@/context/AshlCoinContext";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Package, Truck, MapPin, CheckCircle2, Clock, CircleDot, ArrowLeft, Loader2, AlertCircle, Box, ShoppingBag } from "lucide-react";
+import { Search, Package, Truck, MapPin, CheckCircle2, Clock, CircleDot, ArrowLeft, Loader2, AlertCircle, Box, ShoppingBag, XCircle } from "lucide-react";
 import Link from "next/link";
 import AuthGuard from "@/components/auth/AuthGuard";
 
@@ -24,13 +25,41 @@ function getStatusIndex(status: string): number {
 }
 
 function TrackOrderContent() {
-  const { orders, getOrder } = useOrders();
+  const { orders, getOrder, updateOrder, refreshOrders } = useOrders();
+  const { removePendingCoins } = useAshlCoins();
   const searchParams = useSearchParams();
   const [searchId, setSearchId] = useState("");
   const [trackedOrder, setTrackedOrder] = useState<Order | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [shiprocketTracking, setShiprocketTracking] = useState<any>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState<string | null>(null);
+
+  const handleCancelOrder = async (orderId: string, awbCode?: string) => {
+    setCancellingId(orderId);
+    try {
+      if (awbCode) {
+        await fetch("/api/shiprocket/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ awbs: [awbCode] }),
+        });
+      }
+      await updateOrder(orderId, { status: "cancelled" });
+      await removePendingCoins(orderId);
+      await refreshOrders();
+      if (trackedOrder?.id === orderId) {
+        setTrackedOrder({ ...trackedOrder, status: "cancelled" });
+      }
+    } catch (e) {
+      console.error("Cancel failed:", e);
+    }
+    setCancellingId(null);
+    setShowConfirm(null);
+  };
+
+  const canCancel = (status: string) => ["placed", "processing"].includes(status);
 
   // Auto-load from URL param
   useEffect(() => {
@@ -251,6 +280,51 @@ function TrackOrderContent() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Order Actions (Cancel) */}
+            <div className="bg-card border border-border rounded-xl p-6">
+              <h3 className="text-sm font-medium text-foreground mb-4">Order Actions</h3>
+              
+              {canCancel(trackedOrder.status) && showConfirm !== trackedOrder.id && (
+                <button
+                  onClick={() => setShowConfirm(trackedOrder.id)}
+                  className="inline-flex items-center gap-2 border border-red-500/30 text-red-600 uppercase tracking-[0.15em] text-[10px] px-5 py-2.5 rounded-md hover:bg-red-500/5 transition-colors"
+                >
+                  <XCircle size={12} /> Cancel Order
+                </button>
+              )}
+
+              {showConfirm === trackedOrder.id && (
+                <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-lg">
+                  <p className="text-sm text-red-600 mb-3">Are you sure you want to cancel this order?</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleCancelOrder(trackedOrder.id, trackedOrder.awbCode)}
+                      disabled={cancellingId === trackedOrder.id}
+                      className="inline-flex items-center gap-2 bg-red-600 text-white text-[10px] uppercase tracking-[0.15em] px-5 py-2.5 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+                    >
+                      {cancellingId === trackedOrder.id ? (
+                        <><Loader2 size={12} className="animate-spin" /> Cancelling...</>
+                      ) : (
+                        "Yes, Cancel Order"
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setShowConfirm(null)}
+                      className="text-[10px] uppercase tracking-[0.15em] px-5 py-2.5 bg-secondary text-muted-foreground rounded-md hover:text-foreground transition-colors"
+                    >
+                      No, Keep It
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {trackedOrder.status === "cancelled" && (
+                <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.1em] text-red-500">
+                  <XCircle size={12} /> Order Cancelled
+                </span>
+              )}
             </div>
           </div>
         )}

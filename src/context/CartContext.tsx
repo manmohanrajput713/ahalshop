@@ -164,7 +164,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, 0);
 
   const discountAmount = appliedCoupon ? Math.round((totalPrice * appliedCoupon.discount) / 100) : 0;
-  const discountedTotal = totalPrice - discountAmount - redeemedCoins;
+  const discountedTotal = Math.max(0, totalPrice - discountAmount - redeemedCoins);
 
   return (
     <CartContext.Provider

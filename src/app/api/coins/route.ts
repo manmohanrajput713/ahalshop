@@ -58,6 +58,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "userId and action required" }, { status: 400 });
     }
 
+    // Validate amount when present — must be a positive number, capped at a reasonable limit
+    if (body.amount !== undefined) {
+      const amount = Number(body.amount);
+      if (!Number.isFinite(amount) || amount <= 0 || amount > 10000) {
+        return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+      }
+    }
+
     switch (action) {
       case "add_pending": {
         const { orderId, amount } = body;

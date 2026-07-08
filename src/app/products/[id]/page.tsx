@@ -33,6 +33,9 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   // Adding a fallback description for products that don't have one defined
   const description = product.description || "Experience the pure essence of herbal care. Formulated with carefully selected natural ingredients to nourish, protect, and rejuvenate your skin and hair. Free from harsh chemicals, synthetic colors, and artificial fragrances.";
 
+  const staticProduct = ALL_PRODUCTS.find((p: any) => p.id === productId || p.name === product.name);
+  const productImages = (product as any).images || staticProduct?.images || [product.img];
+
   // Related products: same category, excluding current
   const relatedProducts = products
     .filter((p: any) => p.category === product.category && p.id !== product.id)
@@ -82,7 +85,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           {/* Left Column: Image Carousel */}
           <div className="relative">
             <ProductCarousel 
-              images={(product as any).images || [product.img]} 
+              images={productImages} 
               alt={product.alt || product.name} 
             />
             {/* Cast product to any to avoid TypeScript error since MORE_PRODUCTS items lack a badge property */}
