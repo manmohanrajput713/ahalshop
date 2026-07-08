@@ -6,6 +6,32 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function ProductCarousel({ images, alt }: { images: string[], alt: string }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      nextSlide();
+    }
+    if (isRightSwipe) {
+      prevSlide();
+    }
+  };
 
   if (!images || images.length === 0) return null;
 
@@ -41,7 +67,12 @@ export default function ProductCarousel({ images, alt }: { images: string[], alt
   };
 
   return (
-    <div className="relative aspect-[4/5] bg-muted/30 rounded-xl overflow-hidden border border-border group">
+    <div 
+      className="relative aspect-[4/5] bg-muted/30 rounded-xl overflow-hidden border border-border group"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {/* Main Image */}
       <div className="w-full h-full relative transition-opacity duration-500">
         <Image 
@@ -56,7 +87,7 @@ export default function ProductCarousel({ images, alt }: { images: string[], alt
       {/* Left Arrow */}
       <button 
         onClick={prevSlide}
-        className="absolute top-1/2 left-4 -translate-y-1/2 bg-background/80 hover:bg-background text-foreground p-2 rounded-full border border-border shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110"
+        className="absolute top-1/2 left-4 -translate-y-1/2 bg-background/80 hover:bg-background text-foreground p-2 rounded-full border border-border shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 hover:scale-110"
         aria-label="Previous image"
       >
         <ChevronLeft size={20} strokeWidth={1.5} />
@@ -65,7 +96,7 @@ export default function ProductCarousel({ images, alt }: { images: string[], alt
       {/* Right Arrow */}
       <button 
         onClick={nextSlide}
-        className="absolute top-1/2 right-4 -translate-y-1/2 bg-background/80 hover:bg-background text-foreground p-2 rounded-full border border-border shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110"
+        className="absolute top-1/2 right-4 -translate-y-1/2 bg-background/80 hover:bg-background text-foreground p-2 rounded-full border border-border shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 hover:scale-110"
         aria-label="Next image"
       >
         <ChevronRight size={20} strokeWidth={1.5} />

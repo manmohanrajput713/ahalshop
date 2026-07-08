@@ -13,6 +13,33 @@ const serumImages = [
 
 export default function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe) {
+      setCurrentSlide((prev) => (prev + 1) % serumImages.length);
+    }
+    if (isRightSwipe) {
+      setCurrentSlide((prev) => (prev === 0 ? serumImages.length - 1 : prev - 1));
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -60,7 +87,12 @@ export default function HeroSection() {
       </div>
 
       {/* Right: Image Carousel */}
-      <div className="relative order-1 md:order-2 w-full aspect-square md:aspect-auto md:h-full bg-white overflow-hidden flex items-center justify-center">
+      <div 
+        className="relative order-1 md:order-2 w-full aspect-square md:aspect-auto md:h-full bg-white overflow-hidden flex items-center justify-center"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="relative w-full h-full">
           {serumImages.map((src, index) => (
             <div

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ShoppingBag, Menu, X, LogOut, User, Heart, Coins } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ShoppingBag, Menu, X, LogOut, User, Heart, Coins, Check } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import AuthModal from "@/components/auth/AuthModal";
@@ -29,6 +29,23 @@ export default function Header() {
   const { totalWishlist } = useWishlist();
   const { balance, pendingCoins, transactions } = useAshlCoins();
 
+  const [authToast, setAuthToast] = useState<{ message: string; type: "login" | "logout" } | null>(null);
+  const [isAuthToastVisible, setIsAuthToastVisible] = useState(false);
+  const [toastTimers, setToastTimers] = useState<{ exit: NodeJS.Timeout; cleanup: NodeJS.Timeout } | null>(null);
+
+  const triggerAuthToast = (message: string, type: "login" | "logout") => {
+    if (toastTimers) {
+      clearTimeout(toastTimers.exit);
+      clearTimeout(toastTimers.cleanup);
+    }
+    setAuthToast({ message, type });
+    setIsAuthToastVisible(true);
+
+    const exit = setTimeout(() => setIsAuthToastVisible(false), 3500);
+    const cleanup = setTimeout(() => { setAuthToast(null); setToastTimers(null); }, 3950);
+    setToastTimers({ exit, cleanup });
+  };
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -48,25 +65,42 @@ export default function Header() {
     return () => document.removeEventListener("click", handleClick);
   }, [profilePanelOpen]);
 
+  // Track previous user to detect real sign-in transitions (null -> user)
+  const prevUserRef = useRef<any>(undefined); // undefined = not yet initialized
+
   // Sync Supabase Auth State
   useEffect(() => {
-    // Get active session
+    // Get active session (initial load — no toast)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      prevUserRef.current = currentUser; // Set initial state without triggering toast
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      const newUser = session?.user ?? null;
+      setUser(newUser);
+
+      // Only show toast when transitioning from no-user to user (real sign-in)
+      // prevUserRef.current === null means user was explicitly logged out before
+      // prevUserRef.current === undefined means initial load hasn't completed
+      if (event === "SIGNED_IN" && newUser && prevUserRef.current === null) {
+        triggerAuthToast(`Welcome back, ${newUser.email}`, "login");
+      }
+
+      prevUserRef.current = newUser;
     });
 
     return () => subscription.unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    triggerAuthToast("Successfully signed out", "logout");
   };
 
   const totalPending = pendingCoins.reduce((sum, p) => sum + p.amount, 0);
@@ -371,6 +405,44 @@ export default function Header() {
           console.log("Logged in user email:", email);
         }}
       />
+      
+      {/* Auth Success Toast */}
+      {authToast && (
+        <div
+          className={`fixed top-20 right-4 left-4 md:left-auto md:right-8 z-50 md:w-[380px] bg-card border border-border shadow-2xl rounded-lg p-4 flex gap-4 transition-all duration-300 ${
+            isAuthToastVisible ? "animate-toast-in" : "animate-toast-out"
+          }`}
+          style={{ fontFamily: "var(--font-sans), sans-serif" }}
+        >
+          <div className={`absolute top-0 left-0 bottom-0 w-1.5 rounded-l-lg ${authToast.type === 'login' ? 'bg-primary' : 'bg-destructive'}`} />
+          
+          <div className="flex-1 min-w-0 flex flex-col justify-center py-1 pl-2">
+            <div className={`flex items-center gap-2 ${authToast.type === 'login' ? 'text-primary' : 'text-destructive'} text-[10px] font-bold tracking-[0.15em] uppercase mb-1`}>
+              <Check size={14} strokeWidth={3} />
+              <span>{authToast.type === 'login' ? 'Welcome' : 'Goodbye'}</span>
+            </div>
+            <h4 
+              className="text-sm font-medium text-foreground truncate pr-4"
+              style={{ fontFamily: "var(--font-serif), serif", fontStyle: "italic" }}
+            >
+              {authToast.message}
+            </h4>
+          </div>
+
+          <div className="flex flex-col justify-start items-end">
+            <button
+              onClick={() => {
+                setIsAuthToastVisible(false);
+                setTimeout(() => setAuthToast(null), 450);
+              }}
+              className="text-muted-foreground hover:text-foreground transition-colors p-1"
+              aria-label="Close notification"
+            >
+              <X size={16} strokeWidth={1.5} />
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
