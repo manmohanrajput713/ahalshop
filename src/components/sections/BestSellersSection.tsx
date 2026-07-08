@@ -1,0 +1,93 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { ALL_PRODUCTS } from "@/lib/data";
+import { getProducts } from "@/app/admin/(dashboard)/products/actions";
+import { useCart } from "@/context/CartContext";
+import { useState, useEffect } from "react";
+import { Star, ChevronRight } from "lucide-react";
+import WishlistButton from "@/components/products/WishlistButton";
+
+// Products marked as Bestseller or Popular
+export default function BestSellersSection() {
+  const { addToCart } = useCart();
+  const [products, setProducts] = useState<any[]>(ALL_PRODUCTS);
+
+  useEffect(() => {
+    getProducts().then(data => {
+      if (data && data.length > 0) {
+        setProducts(data);
+      }
+    });
+  }, []);
+
+  const bestSellers = products.filter(
+    (p) => (p as any).badge === "Bestseller" || (p as any).badge === "Popular"
+  );
+
+  if (bestSellers.length === 0) return null;
+
+  return (
+    <section className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-28">
+      <div className="flex items-end justify-between mb-12">
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Star size={16} className="text-amber-500 fill-amber-500" />
+            <p className="text-[11px] tracking-[0.3em] uppercase text-accent">Best Sellers</p>
+          </div>
+          <h2
+            className="text-3xl lg:text-4xl font-normal text-foreground"
+            style={{ fontFamily: "var(--font-lora), serif" }}
+          >
+            Most loved <em className="italic">products.</em>
+          </h2>
+        </div>
+        <Link
+          href="/shop"
+          className="hidden md:inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors border-b border-border pb-0.5"
+        >
+          View all <ChevronRight size={12} />
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
+        {bestSellers.slice(0, 4).map((product) => (
+          <Link
+            key={product.id}
+            href={`/products/${product.id}`}
+            className="group block"
+          >
+            <div className="relative overflow-hidden bg-card aspect-[4/5] rounded-lg">
+              <Image
+                src={product.img}
+                alt={product.alt || product.name}
+                fill
+                className="object-contain transition-transform duration-700 group-hover:scale-105"
+                sizes="(max-width: 768px) 50vw, 25vw"
+              />
+              <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/5 transition-colors duration-500" />
+              <span className="absolute top-3 left-3 bg-amber-50 text-amber-700 text-[9px] tracking-[0.15em] uppercase px-2.5 py-1 rounded-full flex items-center gap-1">
+                <Star size={10} fill="currentColor" /> {(product as any).badge}
+              </span>
+              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <WishlistButton productId={product.id} />
+              </div>
+            </div>
+            <div className="pt-3">
+              <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
+                {product.category}
+              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-foreground" style={{ fontFamily: "var(--font-lora), serif" }}>
+                  {product.name}
+                </p>
+                <p className="text-sm text-accent">{product.price}</p>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}

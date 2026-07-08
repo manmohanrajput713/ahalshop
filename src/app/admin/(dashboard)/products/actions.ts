@@ -1,0 +1,202 @@
+"use server";
+
+import { supabase } from "@/lib/supabase";
+import { revalidatePath } from "next/cache";
+import { ALL_PRODUCTS } from "@/lib/data"; // Fallback data
+import { isAdminAuthenticated } from "@/lib/admin-auth";
+import fs from "fs/promises";
+import path from "path";
+
+// Helper function to handle image upload
+async function handleImageUpload(file: File | null, defaultPath: string = "/products/placeholder.jpg") {
+  if (!file || file.size === 0) return defaultPath;
+  
+  try {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    
+    // Generate unique filename to avoid overwriting
+    const ext = file.name.split('.').pop() || 'jpg';
+    const filename = `upload_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+    const publicPath = `/products/${filename}`;
+    const uploadPath = path.join(process.cwd(), "public", "products", filename);
+    
+    // Ensure directory exists
+    await fs.mkdir(path.dirname(uploadPath), { recursive: true });
+    await fs.writeFile(uploadPath, buffer);
+    
+    return publicPath;
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    return defaultPath;
+  }
+}
+
+export async function getProducts() {
+  try {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("Supabase products table not found or errored. Using fallback data.", error.message);
+      // Return fallback data if table doesn't exist
+      return ALL_PRODUCTS;
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error(err);
+    return ALL_PRODUCTS;
+  }
+}
+
+export async function addProduct(formData: FormData) {
+  const isAuth = await isAdminAuthenticated();
+  if (!isAuth) {
+    return { error: "Unauthorized. Please log in as admin." };
+  }
+
+  const name = formData.get("name") as string;
+  const category = formData.get("category") as string;
+  const price = formData.get("price") as string;
+  const badge = formData.get("badge") as string;
+  const imageFile = formData.get("imageFile") as File | null;
+  const alt = formData.get("alt") as string;
+  const description = formData.get("description") as string;
+  const size = formData.get("size") as string;
+  const suitableFor = formData.get("suitableFor") as string;
+  const ingredientsStr = formData.get("ingredients") as string;
+  const benefitsStr = formData.get("benefits") as string;
+  const howToUse = formData.get("howToUse") as string;
+
+  const ingredients = ingredientsStr ? ingredientsStr.split(',').map(s => s.trim()).filter(Boolean) : null;
+  const benefits = benefitsStr ? benefitsStr.split(',').map(s => s.trim()).filter(Boolean) : null;
+
+  try {
+    const imgPath = await handleImageUpload(imageFile);
+
+    const { error } = await supabase.from("products").insert([
+      {
+        name,
+        category,
+        price,
+        badge: badge || null,
+        img: imgPath,
+        alt: alt || name,
+        description: description || null,
+        size: size || null,
+        suitable_for: suitableFor || null,
+        ingredients: ingredients,
+        benefits: benefits,
+        how_to_use: howToUse || null,
+      },
+    ]);
+
+    if (error) {
+      throw error;
+    }
+
+    revalidatePath("/admin/products");
+    revalidatePath("/");
+    
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to add product", err);
+    let errorMessage = err.message || "Failed to add product.";
+    if (errorMessage.includes("Could not find the table") || errorMessage.includes("relation \"public.products\" does not exist")) {
+      errorMessage = "The 'products' table does not exist in Supabase. Please run the supabase_setup.sql script in your Supabase SQL editor.";
+    }
+    return { error: errorMessage };
+  }
+}
+
+export async function editProduct(formData: FormData) {
+  const isAuth = await isAdminAuthenticated();
+  if (!isAuth) {
+    return { error: "Unauthorized. Please log in as admin." };
+  }
+
+  const id = formData.get("id") as string;
+  if (!id) return { error: "Product ID is missing." };
+
+  const name = formData.get("name") as string;
+  const category = formData.get("category") as string;
+  const price = formData.get("price") as string;
+  const badge = formData.get("badge") as string;
+  const imageFile = formData.get("imageFile") as File | null;
+  const currentImg = formData.get("currentImg") as string;
+  const alt = formData.get("alt") as string;
+  const description = formData.get("description") as string;
+  const size = formData.get("size") as string;
+  const suitableFor = formData.get("suitableFor") as string;
+  const ingredientsStr = formData.get("ingredients") as string;
+  const benefitsStr = formData.get("benefits") as string;
+  const howToUse = formData.get("howToUse") as string;
+
+  const ingredients = ingredientsStr ? ingredientsStr.split(',').map(s => s.trim()).filter(Boolean) : null;
+  const benefits = benefitsStr ? benefitsStr.split(',').map(s => s.trim()).filter(Boolean) : null;
+
+  try {
+    // If a new file is uploaded, handle it; otherwise keep the current image
+    const imgPath = (imageFile && imageFile.size > 0) 
+      ? await handleImageUpload(imageFile) 
+      : currentImg;
+
+    const { error } = await supabase.from("products").update({
+      name,
+      category,
+      price,
+      badge: badge || null,
+      img: imgPath,
+      alt: alt || name,
+      description: description || null,
+      size: size || null,
+      suitable_for: suitableFor || null,
+      ingredients: ingredients,
+      benefits: benefits,
+      how_to_use: howToUse || null,
+    }).eq("id", id);
+
+    if (error) {
+      throw error;
+    }
+
+    revalidatePath("/admin/products");
+    revalidatePath("/");
+    
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to edit product", err);
+    let errorMessage = err.message || "Failed to edit product.";
+    if (errorMessage.includes("Could not find the table") || errorMessage.includes("relation \"public.products\" does not exist")) {
+      errorMessage = "The 'products' table does not exist in Supabase. Please run the supabase_setup.sql script in your Supabase SQL editor.";
+    }
+    return { error: errorMessage };
+  }
+}
+
+export async function deleteProduct(id: number) {
+  const isAuth = await isAdminAuthenticated();
+  if (!isAuth) {
+    return { error: "Unauthorized. Please log in as admin." };
+  }
+
+  try {
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) throw error;
+
+    revalidatePath("/admin/products");
+    revalidatePath("/");
+    
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to delete product", err);
+    let errorMessage = err.message || "Failed to delete product.";
+    if (errorMessage.includes("Could not find the table") || errorMessage.includes("relation \"public.products\" does not exist")) {
+      errorMessage = "The 'products' table does not exist in Supabase. Please run the supabase_setup.sql script in your Supabase SQL editor.";
+    }
+    return { error: errorMessage };
+  }
+}
