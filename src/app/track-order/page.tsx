@@ -51,6 +51,7 @@ function TrackOrderContent() {
           body: JSON.stringify({ awbs: [awbCode], userId }),
         });
       }
+      await updateOrder(orderId, { status: "cancelled" });
       await removePendingCoins(orderId);
       await refreshOrders();
       if (trackedOrder?.id === orderId) {
