@@ -34,7 +34,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const description = product.description || "Experience the pure essence of herbal care. Formulated with carefully selected natural ingredients to nourish, protect, and rejuvenate your skin and hair. Free from harsh chemicals, synthetic colors, and artificial fragrances.";
 
   const staticProduct = ALL_PRODUCTS.find((p: any) => p.id === productId || p.name === product.name);
-  const productImages = (product as any).images || staticProduct?.images || [product.img];
+  const extraImages: string[] = (product as any).images || staticProduct?.images || [];
+  const mainImg = product.img;
+  // Put main image first, then extra carousel images (excluding duplicates of main)
+  const productImages = mainImg
+    ? [mainImg, ...extraImages.filter((img: string) => img !== mainImg)]
+    : extraImages.length > 0 ? extraImages : ["/products/placeholder.jpg"];
 
   // Related products: same category, excluding current
   const relatedProducts = products

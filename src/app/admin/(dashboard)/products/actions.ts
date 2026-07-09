@@ -228,6 +228,53 @@ export async function deleteProduct(id: number) {
   }
 
   try {
+    // 1. Fetch the product to get its image URLs before deleting
+    const { data: product, error: fetchError } = await supabase
+      .from("products")
+      .select("img, images")
+      .eq("id", id)
+      .single();
+
+    if (fetchError) {
+      console.error("Failed to fetch product for image cleanup:", fetchError);
+    }
+
+    // 2. Delete images from Supabase Storage
+    if (product) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+      const { createClient } = await import("@supabase/supabase-js");
+      const adminSupabase = createClient(supabaseUrl, supabaseKey);
+
+      const storagePrefix = `${supabaseUrl}/storage/v1/object/public/products/`;
+      const filesToDelete: string[] = [];
+
+      // Extract filename from main image
+      if (product.img && product.img.startsWith(storagePrefix)) {
+        filesToDelete.push(product.img.replace(storagePrefix, ""));
+      }
+
+      // Extract filenames from carousel images
+      if (product.images && Array.isArray(product.images)) {
+        for (const imgUrl of product.images) {
+          if (typeof imgUrl === "string" && imgUrl.startsWith(storagePrefix)) {
+            filesToDelete.push(imgUrl.replace(storagePrefix, ""));
+          }
+        }
+      }
+
+      if (filesToDelete.length > 0) {
+        const { error: storageError } = await adminSupabase.storage
+          .from("products")
+          .remove(filesToDelete);
+
+        if (storageError) {
+          console.error("Failed to delete images from storage:", storageError);
+        }
+      }
+    }
+
+    // 3. Delete the product row from the database
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) throw error;
 
