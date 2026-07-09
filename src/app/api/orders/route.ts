@@ -8,6 +8,47 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Helper to adjust stock for order items
+async function adjustStock(items: { id: string | number; quantity: number }[], direction: "decrease" | "increase") {
+  for (const item of items) {
+    if (!item.id) continue;
+
+    // Cart items may have composite IDs like "5-50g" for variant products.
+    // Extract the numeric product ID from the front.
+    const rawId = String(item.id);
+    const productId = parseInt(rawId.split("-")[0]);
+
+    if (isNaN(productId)) {
+      console.warn("adjustStock: could not parse product ID from", item.id);
+      continue;
+    }
+
+    const { data: product, error } = await supabase
+      .from("products")
+      .select("stock")
+      .eq("id", productId)
+      .single();
+
+    if (error || !product) {
+      console.warn("adjustStock: product not found for id", productId, error?.message);
+      continue;
+    }
+
+    const currentStock = product.stock ?? 0;
+    const qty = item.quantity || 1;
+    const newStock = direction === "decrease"
+      ? Math.max(0, currentStock - qty)
+      : currentStock + qty;
+
+    console.log(`adjustStock: ${direction} product ${productId} stock ${currentStock} -> ${newStock} (qty: ${qty})`);
+
+    await supabase
+      .from("products")
+      .update({ stock: newStock })
+      .eq("id", productId);
+  }
+}
+
 // GET — fetch all orders (for admin) or single order by id or by user_id
 export async function GET(request: NextRequest) {
   try {
@@ -112,6 +153,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Decrease stock for each ordered item
+    try {
+      if (body.items && Array.isArray(body.items)) {
+        await adjustStock(body.items, "decrease");
+      }
+    } catch (stockErr) {
+      console.error("Failed to adjust stock after order:", stockErr);
+    }
+
     return NextResponse.json(data);
   } catch (error: any) {
     console.error("Order save error:", error);
@@ -165,6 +215,15 @@ export async function PATCH(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // If order is being cancelled, restore stock for each item
+    if (updates.status === "cancelled" && data?.items && Array.isArray(data.items)) {
+      try {
+        await adjustStock(data.items, "increase");
+      } catch (stockErr) {
+        console.error("Failed to restore stock after cancellation:", stockErr);
+      }
     }
 
     return NextResponse.json(data);

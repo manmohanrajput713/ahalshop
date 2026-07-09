@@ -227,24 +227,31 @@ function ShopContent() {
               </div>
             ) : (
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                {filteredProducts.map((product) => (
+                {filteredProducts.map((product) => {
+                  const isOutOfStock = ((product as any).stock ?? 0) <= 0;
+                  return (
                   <Link
                     href={`/products/${product.id}`}
                     key={product.id}
                     className="group block"
                   >
-                    <div className="relative overflow-hidden bg-card aspect-square sm:aspect-[4/3] rounded-lg">
+                    <div className={`relative overflow-hidden bg-card aspect-square sm:aspect-[4/3] rounded-lg ${isOutOfStock ? "opacity-75" : ""}`}>
                       <Image
                         src={product.img}
                         alt={product.alt || product.name}
                         fill
-                        className="object-contain p-2 sm:p-4 transition-transform duration-700 group-hover:scale-105"
+                        className={`object-contain p-2 sm:p-4 transition-transform duration-700 group-hover:scale-105 ${isOutOfStock ? "grayscale-[30%]" : ""}`}
                         sizes="(max-width: 768px) 50vw, 33vw"
                       />
                       <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/5 transition-colors duration-500" />
-                      {(product as any).badge && (
+                      {(product as any).badge && !isOutOfStock && (
                         <span className="absolute top-3 left-3 bg-background text-foreground text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 rounded">
                           {(product as any).badge}
+                        </span>
+                      )}
+                      {isOutOfStock && (
+                        <span className="absolute top-3 left-3 bg-red-50 border border-red-200 text-red-600 text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 rounded font-medium">
+                          Out of Stock
                         </span>
                       )}
                     </div>
@@ -256,11 +263,12 @@ function ShopContent() {
                         <p className="text-sm font-normal text-foreground" style={{ fontFamily: "var(--font-lora), serif" }}>
                           {product.name}
                         </p>
-                        <p className="text-sm text-accent">{product.price}</p>
+                        <p className={`text-sm ${isOutOfStock ? "text-muted-foreground line-through" : "text-accent"}`}>{product.price}</p>
                       </div>
                     </div>
                   </Link>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

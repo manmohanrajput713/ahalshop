@@ -78,6 +78,7 @@ export async function addProduct(formData: FormData) {
   const category = formData.get("category") as string;
   const price = formData.get("price") as string;
   const badge = formData.get("badge") as string;
+  const stock = parseInt(formData.get("stock") as string) || 0;
   const imageFile = formData.get("imageFile") as File | null;
   const extraImageFiles = formData.getAll("extraImages") as File[];
   const alt = formData.get("alt") as string;
@@ -106,6 +107,7 @@ export async function addProduct(formData: FormData) {
         category,
         price,
         badge: badge || null,
+        stock,
         img: imgPath,
         images: uploadedExtraImages.length > 0 ? uploadedExtraImages : null,
         alt: alt || name,
@@ -149,6 +151,7 @@ export async function editProduct(formData: FormData) {
   const category = formData.get("category") as string;
   const price = formData.get("price") as string;
   const badge = formData.get("badge") as string;
+  const stock = parseInt(formData.get("stock") as string) || 0;
   const imageFile = formData.get("imageFile") as File | null;
   const currentImg = formData.get("currentImg") as string;
   const extraImageFiles = formData.getAll("extraImages") as File[];
@@ -192,6 +195,7 @@ export async function editProduct(formData: FormData) {
       category,
       price,
       badge: badge || null,
+      stock,
       img: imgPath,
       images: finalExtraImages,
       alt: alt || name,

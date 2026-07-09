@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import ProductForm from "./ProductForm";
-import { Trash2, Plus, Edit, Loader2 } from "lucide-react";
+import { Trash2, Plus, Edit, Loader2, Package } from "lucide-react";
 import Image from "next/image";
 import { deleteProduct } from "@/app/admin/(dashboard)/products/actions";
 
@@ -59,6 +59,7 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
                 <th className="px-6 py-4 font-medium">Product</th>
                 <th className="px-6 py-4 font-medium">Category</th>
                 <th className="px-6 py-4 font-medium">Price</th>
+                <th className="px-6 py-4 font-medium">Stock</th>
                 <th className="px-6 py-4 font-medium">Badge</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
@@ -81,6 +82,33 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">{product.category}</td>
                   <td className="px-6 py-4 text-muted-foreground">{product.price}</td>
+                  <td className="px-6 py-4">
+                    {(() => {
+                      const stock = product.stock ?? 0;
+                      if (stock === 0) {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 bg-red-500/10 text-red-600 text-xs px-2.5 py-1 rounded-full font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                            Out of Stock
+                          </span>
+                        );
+                      } else if (stock <= 5) {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 bg-yellow-500/10 text-yellow-600 text-xs px-2.5 py-1 rounded-full font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                            {stock} left
+                          </span>
+                        );
+                      } else {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 bg-green-500/10 text-green-600 text-xs px-2.5 py-1 rounded-full font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                            {stock}
+                          </span>
+                        );
+                      }
+                    })()}
+                  </td>
                   <td className="px-6 py-4">
                     {product.badge ? (
                       <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-medium">
@@ -113,7 +141,7 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
               ))}
               {initialProducts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
                     No products found. Add one to get started.
                   </td>
                 </tr>

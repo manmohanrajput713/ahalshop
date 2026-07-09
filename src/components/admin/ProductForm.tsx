@@ -64,6 +64,10 @@ export default function ProductForm({
           <input type="text" name="badge" defaultValue={initialData?.badge || ""} className="w-full bg-card border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="e.g. Bestseller" />
         </div>
         <div className="col-span-2">
+          <label className="block text-sm font-medium text-muted-foreground mb-1">Stock Quantity</label>
+          <input type="number" name="stock" min="0" defaultValue={initialData?.stock ?? 0} required className="w-full bg-card border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary" placeholder="e.g. 50" />
+        </div>
+        <div className="col-span-2">
           <label className="block text-sm font-medium text-muted-foreground mb-1">
             Main Product Image {isEditing && <span className="text-xs text-muted-foreground ml-2">(Leave empty to keep current)</span>}
           </label>

@@ -41,6 +41,9 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     ? [mainImg, ...extraImages.filter((img: string) => img !== mainImg)]
     : extraImages.length > 0 ? extraImages : ["/products/placeholder.jpg"];
 
+  const stock: number = (product as any).stock ?? 0;
+  const isOutOfStock = stock <= 0;
+
   // Related products: same category, excluding current
   const relatedProducts = products
     .filter((p: any) => p.category === product.category && p.id !== product.id)
@@ -88,15 +91,20 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20 mb-16">
           
           {/* Left Column: Image Carousel */}
-          <div className="relative">
+          <div className={`relative ${isOutOfStock ? "opacity-75" : ""}`}>
             <ProductCarousel 
               images={productImages} 
               alt={product.alt || product.name} 
             />
             {/* Cast product to any to avoid TypeScript error since MORE_PRODUCTS items lack a badge property */}
-            {(product as any).badge && (
+            {(product as any).badge && !isOutOfStock && (
               <span className="absolute top-6 left-6 z-10 bg-background border border-border text-foreground text-[10px] tracking-[0.2em] uppercase px-3 py-1.5 shadow-sm">
                 {(product as any).badge}
+              </span>
+            )}
+            {isOutOfStock && (
+              <span className="absolute top-6 left-6 z-10 bg-red-50 border border-red-200 text-red-600 text-[10px] tracking-[0.2em] uppercase px-3 py-1.5 shadow-sm font-medium">
+                Out of Stock
               </span>
             )}
           </div>
@@ -134,7 +142,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
             <div className="space-y-6">
               {/* Using a Client Component for the Add to Bag action */}
-              <AddToBagButton product={product} />
+              <AddToBagButton product={product} stock={stock} />
 
               <div className="pt-8 border-t border-border grid grid-cols-2 gap-6 text-xs uppercase tracking-[0.1em] text-muted-foreground">
                 <div className="flex flex-col gap-1">
