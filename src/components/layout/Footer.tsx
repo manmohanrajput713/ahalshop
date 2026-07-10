@@ -65,15 +65,21 @@ export default function Footer() {
             <p className="text-xs text-muted-foreground font-light leading-relaxed max-w-[180px]">
               A Step For Happy Life — 100% natural herbal skincare and hair care, crafted with care.
             </p>
-            {/* Social placeholder */}
+            {/* Social Links */}
             <div className="flex items-center gap-4 mt-6">
-              {["Instagram", "Facebook", "YouTube"].map((social) => (
+              {[
+                { name: "Instagram", href: "https://www.instagram.com/ashl__herbal?igsh=MW5neHdvaGFqaW1vbw%3D%3D" },
+                { name: "Facebook", href: "https://www.facebook.com/profile.php?id=61591207071349&rdid=DkwoWI6v0jkdAVYP&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1EDVMKAoPM%2F#" },
+                { name: "YouTube", href: "https://www.youtube.com/@ASHL_World" },
+              ].map((social) => (
                 <a
-                  key={social}
-                  href="#"
+                  key={social.name}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-accent transition-colors"
                 >
-                  {social}
+                  {social.name}
                 </a>
               ))}
             </div>

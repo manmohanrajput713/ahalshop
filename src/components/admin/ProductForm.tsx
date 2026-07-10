@@ -9,10 +9,12 @@ import { Upload, X, ImagePlus, Replace, Trash2 } from "lucide-react";
 export default function ProductForm({ 
   onSuccess, 
   initialData, 
+  categories = [],
   onCancel 
 }: { 
   onSuccess?: () => void,
   initialData?: any,
+  categories?: any[],
   onCancel?: () => void
 }) {
   const isEditing = !!initialData;
@@ -255,7 +257,16 @@ export default function ProductForm({
           </div>
           <div>
             <label className={labelClass}>Category</label>
-            <input type="text" name="category" defaultValue={initialData?.category} required className={inputClass} placeholder="e.g. Face Serum" />
+            {categories && categories.length > 0 ? (
+              <select name="category" defaultValue={initialData?.category || ""} required className={inputClass}>
+                <option value="" disabled>Select a category</option>
+                {categories.map((cat: any) => (
+                  <option key={cat.id || cat.name} value={cat.name}>{cat.name}</option>
+                ))}
+              </select>
+            ) : (
+              <input type="text" name="category" defaultValue={initialData?.category} required className={inputClass} placeholder="e.g. Face Serum" />
+            )}
           </div>
           <div>
             <label className={labelClass}>Price</label>

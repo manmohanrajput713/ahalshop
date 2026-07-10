@@ -9,6 +9,7 @@ import { useSearchParams } from "next/navigation";
 import { Search, Package, Truck, MapPin, CheckCircle2, Clock, CircleDot, ArrowLeft, Loader2, AlertCircle, Box, ShoppingBag, XCircle } from "lucide-react";
 import Link from "next/link";
 import AuthGuard from "@/components/auth/AuthGuard";
+import ReviewModal from "@/components/reviews/ReviewModal";
 
 import { supabase } from "@/lib/supabase";
 
@@ -37,6 +38,14 @@ function TrackOrderContent() {
   const [shiprocketTracking, setShiprocketTracking] = useState<any>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState<string | null>(null);
+  
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<{ id: string | number; name: string } | null>(null);
+
+  const handleOpenReview = (id: string | number, name: string) => {
+    setSelectedProduct({ id, name });
+    setReviewModalOpen(true);
+  };
 
   const handleCancelOrder = async (orderId: string, awbCode?: string) => {
     setCancellingId(orderId);
@@ -182,53 +191,73 @@ function TrackOrderContent() {
                 </div>
               </div>
 
-              {/* Status Timeline */}
-              <div className="relative">
-                <div className="flex items-start justify-between">
-                  {STATUS_STEPS.map((step, index) => {
-                    const isCompleted = index <= currentStepIndex;
-                    const isCurrent = index === currentStepIndex;
-                    const StepIcon = step.icon;
-
-                    return (
-                      <div key={step.key} className="flex flex-col items-center flex-1 relative">
-                        {/* Connecting line */}
-                        {index < STATUS_STEPS.length - 1 && (
-                          <div
-                            className={`absolute top-5 left-1/2 w-full h-0.5 ${
-                              index < currentStepIndex ? "bg-accent" : "bg-border"
-                            }`}
-                          />
-                        )}
-                        
-                        {/* Icon circle */}
-                        <div
-                          className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
-                            isCurrent
-                              ? "bg-accent border-accent text-accent-foreground shadow-md shadow-accent/20"
-                              : isCompleted
-                              ? "bg-accent/10 border-accent text-accent"
-                              : "bg-card border-border text-muted-foreground"
-                          }`}
-                        >
-                          {isCurrent && !isCompleted ? (
-                            <Loader2 size={16} className="animate-spin" />
-                          ) : (
-                            <StepIcon size={16} />
-                          )}
-                        </div>
-
-                        {/* Label */}
-                        <p className={`text-[10px] text-center mt-2 leading-tight max-w-[70px] ${
-                          isCompleted ? "text-foreground font-medium" : "text-muted-foreground"
-                        }`}>
-                          {step.label}
-                        </p>
-                      </div>
-                    );
-                  })}
+              {/* Status Timeline or Cancelled/Refunded State */}
+              {trackedOrder.status === "cancelled" || trackedOrder.status === "refunded" ? (
+                <div className={`flex flex-col items-center justify-center py-10 rounded-xl border ${trackedOrder.status === "refunded" ? "bg-green-500/5 border-green-500/20" : "bg-secondary border-border"}`}>
+                  <div className={`w-16 h-16 rounded-full border flex items-center justify-center mb-4 animate-bounce ${trackedOrder.status === "refunded" ? "bg-green-100 border-green-200 text-green-600" : "bg-card border-border text-muted-foreground"}`}>
+                    {trackedOrder.status === "refunded" ? (
+                      <CheckCircle2 size={32} strokeWidth={1.5} />
+                    ) : (
+                      <XCircle size={32} strokeWidth={1.5} />
+                    )}
+                  </div>
+                  <h3 className={`text-lg font-medium uppercase tracking-widest mb-2 ${trackedOrder.status === "refunded" ? "text-green-700" : "text-foreground"}`}>
+                    Order {trackedOrder.status === "refunded" ? "Refunded" : "Cancelled"}
+                  </h3>
+                  <p className={`text-sm text-center max-w-sm px-4 ${trackedOrder.status === "refunded" ? "text-green-700/80" : "text-muted-foreground"}`}>
+                    {trackedOrder.status === "refunded" 
+                      ? "Your order has been cancelled and the amount has been refunded."
+                      : "This order has been cancelled. If you have already paid, the refund will be initiated soon."}
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <div className="relative">
+                  <div className="flex items-start justify-between">
+                    {STATUS_STEPS.map((step, index) => {
+                      const isCompleted = index <= currentStepIndex;
+                      const isCurrent = index === currentStepIndex;
+                      const StepIcon = step.icon;
+
+                      return (
+                        <div key={step.key} className="flex flex-col items-center flex-1 relative">
+                          {/* Connecting line */}
+                          {index < STATUS_STEPS.length - 1 && (
+                            <div
+                              className={`absolute top-5 left-1/2 w-full h-0.5 ${
+                                index < currentStepIndex ? "bg-accent" : "bg-border"
+                              }`}
+                            />
+                          )}
+                          
+                          {/* Icon circle */}
+                          <div
+                            className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                              isCurrent
+                                ? "bg-accent border-accent text-accent-foreground shadow-md shadow-accent/20"
+                                : isCompleted
+                                ? "bg-accent/10 border-accent text-accent"
+                                : "bg-card border-border text-muted-foreground"
+                            }`}
+                          >
+                            {isCurrent && !isCompleted ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <StepIcon size={16} />
+                            )}
+                          </div>
+
+                          {/* Label */}
+                          <p className={`text-[10px] text-center mt-2 leading-tight max-w-[70px] ${
+                            isCompleted ? "text-foreground font-medium" : "text-muted-foreground"
+                          }`}>
+                            {step.label}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Courier Info */}
               {(trackedOrder.courierName || trackedOrder.awbCode) && (
@@ -277,9 +306,11 @@ function TrackOrderContent() {
                 {trackedOrder.items.map((item) => (
                   <div key={item.id} className="flex items-center gap-4">
                     <div className="w-2 h-2 rounded-full bg-accent shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-sm text-foreground">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                    <div className="flex-1 flex items-center gap-2">
+                      <div>
+                        <p className="text-sm text-foreground">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                      </div>
                     </div>
                     <p className="text-sm text-accent">{item.price}</p>
                   </div>
@@ -287,7 +318,7 @@ function TrackOrderContent() {
               </div>
             </div>
 
-            {/* Order Actions (Cancel) */}
+            {/* Order Actions */}
             <div className="bg-card border border-border rounded-xl p-6">
               <h3 className="text-sm font-medium text-foreground mb-4">Order Actions</h3>
               
@@ -329,6 +360,23 @@ function TrackOrderContent() {
                 <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.1em] text-red-500">
                   <XCircle size={12} /> Order Cancelled
                 </span>
+              )}
+
+              {trackedOrder.status === "delivered" && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-xs text-muted-foreground mb-1">Leave a review for your purchased items:</p>
+                  <div className="flex flex-wrap gap-3">
+                    {trackedOrder.items.map(item => (
+                      <button
+                        key={item.id}
+                        onClick={() => handleOpenReview(item.id, item.name)}
+                        className="inline-flex items-center gap-2 bg-primary text-primary-foreground uppercase tracking-[0.15em] text-[10px] px-5 py-2.5 rounded hover:bg-primary/90 transition-colors"
+                      >
+                        Write a Review: {item.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -385,6 +433,15 @@ function TrackOrderContent() {
             </Link>
           </div>
         )}
+
+      {selectedProduct && (
+        <ReviewModal
+          isOpen={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          productId={selectedProduct.id}
+          productName={selectedProduct.name}
+        />
+      )}
     </>
   );
 }

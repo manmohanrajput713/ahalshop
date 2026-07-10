@@ -41,6 +41,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Since we don't have user_id in the schema yet, we check by name and productId
+    const { data: existingReviews, error: checkError } = await supabase
+      .from("product_reviews")
+      .select("id")
+      .eq("product_id", productId)
+      .eq("name", name);
+      
+    if (checkError) {
+      console.error("Error checking existing reviews:", checkError);
+    }
+    
+    if (existingReviews && existingReviews.length > 0) {
+       return NextResponse.json({ error: "You have already reviewed this product." }, { status: 400 });
+    }
+
     const { data, error } = await supabase
       .from("product_reviews")
       .insert({

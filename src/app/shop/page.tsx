@@ -5,6 +5,7 @@ import Footer from "@/components/layout/Footer";
 import Image from "next/image";
 import Link from "next/link";
 import { getProducts } from "@/app/admin/(dashboard)/products/actions";
+import { getCategories } from "@/app/admin/(dashboard)/categories/actions";
 import { useCart } from "@/context/CartContext";
 import { useState, useEffect, useMemo } from "react";
 import { SlidersHorizontal, X, Search } from "lucide-react";
@@ -21,21 +22,31 @@ function ShopContent() {
   const [sortBy, setSortBy] = useState<"default" | "price-asc" | "price-desc" | "name">("default");
   const [showFilters, setShowFilters] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { addToCart } = useCart();
 
   useEffect(() => {
-    getProducts().then(data => {
-      if (data && data.length > 0) {
-        setProducts(data);
+    Promise.all([
+      getProducts(),
+      getCategories(),
+    ]).then(([productsData, categoriesData]) => {
+      if (productsData && productsData.length > 0) {
+        setProducts(productsData);
+      }
+      if (categoriesData && categoriesData.length > 0) {
+        setDbCategories(categoriesData);
       }
     }).finally(() => setIsLoading(false));
   }, []);
 
   const categories = useMemo(() => {
-    const cats = ["All", ...new Set(products.map((p) => p.category))];
-    return cats;
-  }, [products]);
+    // Merge categories from products + admin-defined categories table
+    const productCats = new Set(products.map((p) => p.category));
+    const dbCatNames = dbCategories.map((c: any) => c.name);
+    const allCats = new Set([...productCats, ...dbCatNames]);
+    return ["All", ...allCats];
+  }, [products, dbCategories]);
 
   const filteredProducts = useMemo(() => {
     let result = [...products];

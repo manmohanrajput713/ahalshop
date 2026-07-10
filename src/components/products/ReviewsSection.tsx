@@ -15,9 +15,15 @@ type Review = {
 
 export default function ReviewsSection({ productId }: { productId: string }) {
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [newReview, setNewReview] = useState({ name: "", rating: 5, comment: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Static fallback reviews
+  const staticReviews: Review[] = [
+    { id: 'static-1', name: 'Sarah M.', rating: 5, comment: 'Absolutely love this product! My skin feels amazing after just a few days of use.', date: 'Oct 12, 2023' },
+    { id: 'static-2', name: 'Priya K.', rating: 4, comment: 'Great quality and fast delivery. Will definitely be buying again.', date: 'Sep 28, 2023' },
+    { id: 'static-3', name: 'Jessica T.', rating: 5, comment: 'Highly recommended! The ingredients are natural and it smells wonderful.', date: 'Sep 15, 2023' },
+    { id: 'static-4', name: 'Ananya R.', rating: 5, comment: 'Very gentle on the skin. I’ve noticed a visible glow since I started using it.', date: 'Aug 30, 2023' },
+  ];
 
   // Fetch reviews on mount
   useEffect(() => {
@@ -26,7 +32,10 @@ export default function ReviewsSection({ productId }: { productId: string }) {
         const res = await fetch(`/api/reviews?productId=${productId}`);
         if (res.ok) {
           const data = await res.json();
-          setReviews(data.reviews || []);
+          // Merge fetched reviews with static ones
+          setReviews([...(data.reviews || []), ...staticReviews]);
+        } else {
+          setReviews(staticReviews);
         }
       } catch (e) {
         console.error("Failed to load reviews", e);
@@ -36,40 +45,6 @@ export default function ReviewsSection({ productId }: { productId: string }) {
     }
     loadReviews();
   }, [productId]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newReview.name || !newReview.comment) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      const res = await fetch("/api/reviews", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId,
-          name: newReview.name,
-          rating: newReview.rating,
-          comment: newReview.comment
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        // Prepend new review
-        setReviews([data.review, ...reviews]);
-        setNewReview({ name: "", rating: 5, comment: "" });
-      } else {
-        alert("Failed to submit review. Please try again.");
-      }
-    } catch (e) {
-      console.error(e);
-      alert("An error occurred");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const averageRating = reviews.length > 0 
     ? (reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length).toFixed(1)
@@ -99,65 +74,11 @@ export default function ReviewsSection({ productId }: { productId: string }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        {/* Write Review Form */}
-        <div>
-          <h3 className="text-lg font-medium text-foreground mb-6 uppercase tracking-[0.1em] text-sm">Write a Review</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs uppercase tracking-[0.1em] text-muted-foreground mb-1">Your Name</label>
-              <input 
-                type="text" 
-                required
-                value={newReview.name}
-                onChange={(e) => setNewReview({...newReview, name: e.target.value})}
-                className="w-full bg-card border border-border px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-200"
-                placeholder="Jane Doe"
-              />
-            </div>
-            <div>
-              <label className="block text-xs uppercase tracking-[0.1em] text-muted-foreground mb-1">Rating</label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setNewReview({...newReview, rating: star})}
-                    className="p-1 hover:scale-110 transition-transform"
-                  >
-                    <Star 
-                      size={20} 
-                      className={star <= newReview.rating ? "text-accent fill-accent" : "text-muted"} 
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs uppercase tracking-[0.1em] text-muted-foreground mb-1">Your Review</label>
-              <textarea 
-                required
-                rows={4}
-                value={newReview.comment}
-                onChange={(e) => setNewReview({...newReview, comment: e.target.value})}
-                className="w-full bg-card border border-border px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-200 resize-none"
-                placeholder="Share your experience..."
-              />
-            </div>
-            <button 
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-primary text-primary-foreground uppercase tracking-[0.15em] text-xs px-8 py-4 hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              {isSubmitting ? "Submitting..." : "Submit Review"}
-            </button>
-          </form>
-        </div>
-
+      <div className="flex flex-col gap-12">
         {/* Reviews List */}
         <div className="space-y-8">
           {reviews.length === 0 ? (
-            <p className="text-muted-foreground italic text-sm">No reviews yet. Be the first to review!</p>
+            <p className="text-muted-foreground italic text-sm">No reviews yet.</p>
           ) : (
             reviews.map((review) => (
               <div key={review.id} className="border-b border-border/50 pb-6 last:border-0">

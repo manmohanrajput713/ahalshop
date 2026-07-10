@@ -95,9 +95,9 @@ export default function OrdersPage() {
                   {/* Items Preview */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {order.items.map((item) => (
-                      <span key={item.id} className="text-xs bg-secondary px-3 py-1.5 rounded-md text-muted-foreground">
-                        {item.name} × {item.quantity}
-                      </span>
+                      <div key={item.id} className="flex items-center gap-2 text-xs bg-secondary px-3 py-1.5 rounded-md text-muted-foreground">
+                        <span>{item.name} × {item.quantity}</span>
+                      </div>
                     ))}
                   </div>
 

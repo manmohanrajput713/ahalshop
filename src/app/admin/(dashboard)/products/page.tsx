@@ -1,8 +1,10 @@
 import { getProducts } from "./actions";
+import { getCategories } from "../categories/actions";
 import ProductsManager from "@/components/admin/ProductsManager";
 
 export default async function AdminProductsPage() {
   const products = await getProducts();
+  const categories = await getCategories();
 
   return (
     <div className="space-y-8">
@@ -13,7 +15,7 @@ export default async function AdminProductsPage() {
         </div>
       </div>
 
-      <ProductsManager initialProducts={products} />
+      <ProductsManager initialProducts={products} categories={categories} />
     </div>
   );
 }
