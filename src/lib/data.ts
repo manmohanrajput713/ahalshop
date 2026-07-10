@@ -5,7 +5,9 @@ export const PRODUCTS = [
     id: 1,
     name: "Vitamin C Face Serum",
     category: "Face Serum",
-    price: "₹629",
+    price: "₹449",
+    mrp: "₹629",
+    discount: "29% OFF",
     badge: "Bestseller",
     img: "/products/serum1.jpg",
     images: [
@@ -16,33 +18,37 @@ export const PRODUCTS = [
     ],
     alt: "ASHL Herbal Face Serum with Vitamin E, Vitamin C & Hyaluronic Acid",
     variants: [
-      { size: "30 ml", price: "₹629" },
+      { size: "30 ml", mrp: "₹629", price: "₹449", discount: "29% OFF" },
     ],
   },
   {
     id: 2,
     name: "Bhringraj Hair Oil",
     category: "Hair Oil",
-    price: "₹422",
+    price: "₹339",
+    mrp: "₹422",
+    discount: "20% OFF",
     badge: "New",
-    img: "/products/hairoil1.jpg",
+    img: "/products/cover_hairoil.png",
     images: [
-      "/products/hairoil1.jpg",
+      "/products/cover_hairoil.png",
       "/products/hairoil2.jpg",
       "/products/hairoil3.jpg",
       "/products/hairoil4.jpg",
     ],
     alt: "ASHL Herbal Hair Oil with Bhringraj, Rosemary & Hibiscus",
     variants: [
-      { size: "100 ml", price: "₹422" },
-      { size: "50 ml", price: "₹219" },
+      { size: "100 ml", mrp: "₹422", price: "₹339", discount: "20% OFF" },
+      { size: "50 ml", mrp: "₹219", price: "₹179", discount: "18% OFF" },
     ],
   },
   {
     id: 3,
     name: "Herbal Face Pack",
     category: "Face & Body",
-    price: "₹109",
+    price: "₹89",
+    mrp: "₹109",
+    discount: "18% OFF",
     badge: null,
     img: "/products/facepack1.jpg",
     images: [
@@ -52,14 +58,16 @@ export const PRODUCTS = [
     ],
     alt: "ASHL Herbal Face Pack with Nagkeshar, Aloe Vera, Dashmool & Neem",
     variants: [
-      { size: "50 g", price: "₹109" },
+      { size: "50 g", mrp: "₹109", price: "₹89", discount: "18% OFF" },
     ],
   },
   {
     id: 4,
     name: "Herbal Face Wash",
     category: "Face Wash",
-    price: "₹429",
+    price: "₹309",
+    mrp: "₹429",
+    discount: "28% OFF",
     badge: "Popular",
     img: "/products/facewash1.jpg",
     images: [
@@ -69,8 +77,8 @@ export const PRODUCTS = [
     ],
     alt: "ASHL Herbal Face Wash with Aloe Vera, Neem, Tea Tree Oil & Vitamin E",
     variants: [
-      { size: "200 ml", price: "₹429" },
-      { size: "100 ml", price: "₹216" },
+      { size: "200 ml", mrp: "₹429", price: "₹309", discount: "28% OFF" },
+      { size: "100 ml", mrp: "₹216", price: "₹159", discount: "26% OFF" },
     ],
   },
 ];
@@ -80,7 +88,9 @@ export const MORE_PRODUCTS = [
     id: 5,
     name: "Face Cleanser",
     category: "Cleanser",
-    price: "₹289",
+    price: "₹169",
+    mrp: "₹289",
+    discount: "42% OFF",
     img: "/products/cleanser1.jpg",
     images: [
       "/products/cleanser1.jpg",
@@ -90,15 +100,17 @@ export const MORE_PRODUCTS = [
     ],
     alt: "ASHL Herbal Face Cleanser with Aloe Vera & Neem",
     variants: [
-      { size: "100 ml", price: "₹289" },
-      { size: "50 ml", price: "₹199" },
+      { size: "100 ml", mrp: "₹289", price: "₹169", discount: "42% OFF" },
+      { size: "50 ml", mrp: "₹199", price: "₹119", discount: "40% OFF" },
     ],
   },
   {
     id: 6,
     name: "Herbal Shampoo",
     category: "Shampoo",
-    price: "₹299",
+    price: "₹239",
+    mrp: "₹299",
+    discount: "20% OFF",
     img: "/products/cover_shampoo.png",
     images: [
       "/products/cover_shampoo.png",
@@ -106,8 +118,8 @@ export const MORE_PRODUCTS = [
     ],
     alt: "ASHL Herbal Shampoo with Amla, Aloe Vera, Hibiscus & Rosemary",
     variants: [
-      { size: "200 ml", price: "₹299" },
-      { size: "100 ml", price: "₹159" },
+      { size: "200 ml", mrp: "₹299", price: "₹239", discount: "20% OFF" },
+      { size: "100 ml", mrp: "₹159", price: "₹129", discount: "19% OFF" },
     ],
   },
 ];
@@ -117,7 +129,9 @@ export const SOAP_PRODUCTS = [
     id: 9,
     name: "Jadi Buti Ubtan",
     category: "Soap",
-    price: "₹189",
+    price: "₹149",
+    mrp: "₹199",
+    discount: "25% OFF",
     badge: "Bestseller",
     img: "/soaps/jadi buti ubtan/IMG-20260705-WA0012.jpg",
     images: [
@@ -127,13 +141,18 @@ export const SOAP_PRODUCTS = [
       "/soaps/jadi buti ubtan/IMG-20260705-WA0013.jpg",
     ],
     alt: "ASHL Herbal Jadi Buti Ubtan Soap",
-    description: "A traditional herbal ubtan soap packed with natural exfoliants and brightening ingredients to reveal radiant, glowing skin."
+    description: "A traditional herbal ubtan soap packed with natural exfoliants and brightening ingredients to reveal radiant, glowing skin.",
+    variants: [
+      { size: "100 gm", mrp: "₹199", price: "₹149", discount: "25% OFF" },
+    ],
   },
   {
     id: 10,
     name: "Kesar Haldi Chandan",
     category: "Soap",
-    price: "₹199",
+    price: "₹119",
+    mrp: "₹149",
+    discount: "20% OFF",
     badge: "New",
     img: "/soaps/kesar haldi chandan/IMG-20260705-WA0016.jpg",
     images: [
@@ -146,13 +165,18 @@ export const SOAP_PRODUCTS = [
       "/soaps/kesar haldi chandan/IMG-20260705-WA0020.jpg",
     ],
     alt: "ASHL Herbal Kesar Haldi Chandan Soap",
-    description: "Infused with saffron, turmeric, and sandalwood to even out skin tone, reduce blemishes, and provide a golden glow."
+    description: "Infused with saffron, turmeric, and sandalwood to even out skin tone, reduce blemishes, and provide a golden glow.",
+    variants: [
+      { size: "100 gm", mrp: "₹149", price: "₹119", discount: "20% OFF" },
+    ],
   },
   {
     id: 11,
     name: "Lavender Soap",
     category: "Soap",
-    price: "₹179",
+    price: "₹119",
+    mrp: "₹149",
+    discount: "20% OFF",
     badge: null,
     img: "/soaps/lavender soap/IMG-20260705-WA0023.jpg",
     images: [
@@ -163,13 +187,18 @@ export const SOAP_PRODUCTS = [
       "/soaps/lavender soap/IMG-20260705-WA0027.jpg",
     ],
     alt: "ASHL Herbal Lavender Soap",
-    description: "A calming lavender soap that soothes the senses and gently cleanses the skin. Perfect for a relaxing evening bath."
+    description: "A calming lavender soap that soothes the senses and gently cleanses the skin. Perfect for a relaxing evening bath.",
+    variants: [
+      { size: "100 gm", mrp: "₹149", price: "₹119", discount: "20% OFF" },
+    ],
   },
   {
     id: 12,
     name: "Neem Aloe Vera",
     category: "Soap",
-    price: "₹149",
+    price: "₹99",
+    mrp: "₹139",
+    discount: "29% OFF",
     badge: "Classic",
     img: "/soaps/neem alovera/IMG-20260705-WA0042.jpg",
     images: [
@@ -182,13 +211,18 @@ export const SOAP_PRODUCTS = [
       "/soaps/neem alovera/IMG-20260705-WA0045.jpg",
     ],
     alt: "ASHL Herbal Neem Aloe Vera Soap",
-    description: "The ultimate purifying bar. Neem fights bacteria while Aloe Vera deeply hydrates, making this ideal for acne-prone skin."
+    description: "The ultimate purifying bar. Neem fights bacteria while Aloe Vera deeply hydrates, making this ideal for acne-prone skin.",
+    variants: [
+      { size: "100 ml", mrp: "₹139", price: "₹99", discount: "29% OFF" },
+    ],
   },
   {
     id: 13,
     name: "Orange Mint",
     category: "Soap",
-    price: "₹169",
+    price: "₹99",
+    mrp: "₹139",
+    discount: "29% OFF",
     badge: null,
     img: "/soaps/orange mint/IMG-20260705-WA0029.jpg",
     images: [
@@ -199,13 +233,18 @@ export const SOAP_PRODUCTS = [
       "/soaps/orange mint/IMG-20260705-WA0032.jpg",
     ],
     alt: "ASHL Herbal Orange Mint Soap",
-    description: "Awaken your senses with zesty orange and refreshing mint. This energizing soap cleanses effectively while invigorating your mind."
+    description: "Awaken your senses with zesty orange and refreshing mint. This energizing soap cleanses effectively while invigorating your mind.",
+    variants: [
+      { size: "100 gm", mrp: "₹139", price: "₹99", discount: "29% OFF" },
+    ],
   },
   {
     id: 14,
     name: "Rose Tulsi",
     category: "Soap",
-    price: "₹179",
+    price: "₹11",
+    mrp: "₹139",
+    discount: "92% OFF",
     badge: "Popular",
     img: "/soaps/rose tulsi/IMG-20260705-WA0037.jpg",
     images: [
@@ -217,7 +256,10 @@ export const SOAP_PRODUCTS = [
       "/soaps/rose tulsi/IMG-20260705-WA0038.jpg",
     ],
     alt: "ASHL Herbal Rose Tulsi Soap",
-    description: "A beautiful combination of hydrating rose and purifying tulsi. Leaves your skin feeling soft, protected, and delicately fragranced."
+    description: "A beautiful combination of hydrating rose and purifying tulsi. Leaves your skin feeling soft, protected, and delicately fragranced.",
+    variants: [
+      { size: "100 gm", mrp: "₹139", price: "₹11", discount: "92% OFF" },
+    ],
   }
 ];
 

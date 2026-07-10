@@ -102,7 +102,7 @@ export const PRODUCT_DETAILS: Record<number, {
     ],
     howToUse: "Lather the soap with water. Apply to wet body in circular motions. Rinse off with water. Suitable for daily bathing.",
     suitableFor: "All skin types — Men & Women",
-    size: "75 g",
+    size: "100 g",
   },
   // Kesar Haldi Chandan Soap
   10: {
@@ -116,7 +116,7 @@ export const PRODUCT_DETAILS: Record<number, {
     ],
     howToUse: "Lather the soap with water. Apply to wet body. Massage gently and rinse. For face, create lather and apply gently, avoiding eyes.",
     suitableFor: "All skin types — especially for brightening",
-    size: "75 g",
+    size: "100 g",
   },
   // Lavender Soap
   11: {
@@ -130,7 +130,7 @@ export const PRODUCT_DETAILS: Record<number, {
     ],
     howToUse: "Lather with water and apply to body. The soothing lavender aroma enhances your bathing ritual. Rinse with water.",
     suitableFor: "All skin types — especially Dry and Sensitive",
-    size: "75 g",
+    size: "100 g",
   },
   // Neem Aloe Vera Soap
   12: {
@@ -144,7 +144,7 @@ export const PRODUCT_DETAILS: Record<number, {
     ],
     howToUse: "Create a rich lather and apply to body and face. Leave for a few seconds to let neem work. Rinse thoroughly.",
     suitableFor: "All skin types — especially Oily and Acne-prone",
-    size: "75 g",
+    size: "100 g",
   },
   // Orange Mint Soap
   13: {
@@ -158,7 +158,7 @@ export const PRODUCT_DETAILS: Record<number, {
     ],
     howToUse: "Lather with water and apply to body. Enjoy the refreshing citrus-mint sensation. Rinse with water.",
     suitableFor: "All skin types — especially Oily skin",
-    size: "75 g",
+    size: "100 g",
   },
   // Rose Tulsi Soap
   14: {
@@ -172,6 +172,6 @@ export const PRODUCT_DETAILS: Record<number, {
     ],
     howToUse: "Create a rich lather and apply to body. The rose-tulsi combination provides a spa-like experience. Rinse with water.",
     suitableFor: "All skin types — Men & Women",
-    size: "75 g",
+    size: "100 g",
   },
 };

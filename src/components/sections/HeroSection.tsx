@@ -4,11 +4,27 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
-const serumImages = [
-  "/products/serum1.jpg",
-  "/products/serum2.jpg",
-
-  "/products/serum4.jpg",
+const carouselSlides = [
+  {
+    src: "/products/serum1.jpg",
+    title: "Vitamin C Face Serum",
+    price: "₹499",
+  },
+  {
+    src: "/products/cover_hairoil.png",
+    title: "Ayurvedic Hair Oil",
+    price: "₹249",
+  },
+  {
+    src: "/products/cover_shampoo.png",
+    title: "Hair Cleanser Shampoo",
+    price: "₹299",
+  },
+  {
+    src: "/products/facewash1.jpg",
+    title: "Kumkumadi Face Wash",
+    price: "₹199",
+  },
 ];
 
 export default function HeroSection() {
@@ -34,16 +50,16 @@ export default function HeroSection() {
     const isRightSwipe = distance < -minSwipeDistance;
     
     if (isLeftSwipe) {
-      setCurrentSlide((prev) => (prev + 1) % serumImages.length);
+      setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
     }
     if (isRightSwipe) {
-      setCurrentSlide((prev) => (prev === 0 ? serumImages.length - 1 : prev - 1));
+      setCurrentSlide((prev) => (prev === 0 ? carouselSlides.length - 1 : prev - 1));
     }
   };
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % serumImages.length);
+      setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
     }, 4000);
     return () => clearInterval(timer);
   }, []);
@@ -94,17 +110,17 @@ export default function HeroSection() {
         onTouchEnd={onTouchEnd}
       >
         <div className="relative w-full h-full">
-          {serumImages.map((src, index) => (
+          {carouselSlides.map((slide, index) => (
             <div
-              key={src}
+              key={slide.src}
               className="absolute inset-0 w-full h-full transition-transform duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)]"
               style={{ transform: `translateX(${(index - currentSlide) * 100}%)` }}
             >
               <Image
-                src={src}
-                alt={`ASHL Herbal Face Serum ${index + 1}`}
+                src={slide.src}
+                alt={slide.title}
                 fill
-                className={index === 0 ? "object-contain object-center p-6 sm:p-8" : "object-contain object-center"}
+                className={index === 0 ? "object-contain object-center p-6 sm:p-8" : "object-contain object-center p-6 sm:p-8"}
                 priority={index === 0}
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
@@ -114,7 +130,7 @@ export default function HeroSection() {
 
         {/* Carousel Indicators */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-          {serumImages.map((_, idx) => (
+          {carouselSlides.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrentSlide(idx)}
@@ -129,9 +145,9 @@ export default function HeroSection() {
         <div className="hidden md:block absolute bottom-8 left-8 bg-background/90 backdrop-blur-sm border border-border px-5 py-4 z-10">
           <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-0.5">Featured</p>
           <p className="text-sm font-medium" style={{ fontFamily: "var(--font-lora), serif" }}>
-            Vitamin C Face Serum
+            {carouselSlides[currentSlide].title}
           </p>
-          <p className="text-xs text-accent mt-0.5">₹499</p>
+          <p className="text-xs text-accent mt-0.5">{carouselSlides[currentSlide].price}</p>
         </div>
       </div>
     </section>

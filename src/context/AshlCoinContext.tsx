@@ -30,6 +30,8 @@ interface AshlCoinContextType {
   creditPendingCoins: (orderId: string) => void;
   removePendingCoins: (orderId: string) => void;
   refreshCoins: () => void;
+  coinsPerRupeeDiscount: number;
+  rupeesPerCoinEarned: number;
 }
 
 const AshlCoinContext = createContext<AshlCoinContextType | undefined>(undefined);
@@ -40,6 +42,25 @@ export function AshlCoinProvider({ children }: { children: ReactNode }) {
   const [pendingCoins, setPendingCoins] = useState<PendingCoin[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [coinsPerRupeeDiscount, setCoinsPerRupeeDiscount] = useState(5);
+  const [rupeesPerCoinEarned, setRupeesPerCoinEarned] = useState(10);
+
+  // Fetch settings globally on mount
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const data = await res.json();
+          setCoinsPerRupeeDiscount(Number(data.coinsPerRupeeDiscount) || 5);
+          setRupeesPerCoinEarned(Number(data.rupeesPerCoinEarned) || 10);
+        }
+      } catch (e) {
+        console.error("Failed to load coin settings", e);
+      }
+    }
+    loadSettings();
+  }, []);
 
   // Track auth state
   useEffect(() => {
@@ -92,10 +113,10 @@ export function AshlCoinProvider({ children }: { children: ReactNode }) {
     fetchCoinData();
   }, [fetchCoinData]);
 
-  // Calculate coins to earn: 10 coins per ₹100 spent
+  // Calculate coins to earn dynamically
   const coinsToEarn = useCallback((orderTotal: number): number => {
-    return Math.floor(orderTotal / 100) * 10;
-  }, []);
+    return Math.floor(orderTotal / rupeesPerCoinEarned);
+  }, [rupeesPerCoinEarned]);
 
   // Add pending coins for an order (coins will be credited after delivery)
   const addPendingCoins = useCallback(async (orderId: string, amount: number) => {
@@ -232,6 +253,8 @@ export function AshlCoinProvider({ children }: { children: ReactNode }) {
       creditPendingCoins,
       removePendingCoins,
       refreshCoins,
+      coinsPerRupeeDiscount,
+      rupeesPerCoinEarned,
     }}>
       {children}
     </AshlCoinContext.Provider>

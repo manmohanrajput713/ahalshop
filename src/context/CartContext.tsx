@@ -30,6 +30,7 @@ interface CartContextType {
   discountAmount: number;
   redeemedCoins: number;
   setRedeemedCoins: (coins: number) => void;
+  coinDiscountAmount: number;
   discountedTotal: number;
 }
 
@@ -38,9 +39,23 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [redeemedCoins, setRedeemedCoins] = useState(0);
+  const [coinsPerRupeeDiscount, setCoinsPerRupeeDiscount] = useState(5);
+
+  // Fetch dynamic coin settings
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const data = await res.json();
+          setCoinsPerRupeeDiscount(Number(data.coinsPerRupeeDiscount) || 5);
+        }
+      } catch (e) {}
+    }
+    loadSettings();
+  }, []);
 
   const [toast, setToast] = useState<{ product: any; quantity: number } | null>(null);
   const [isToastVisible, setIsToastVisible] = useState(false);
@@ -164,7 +179,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, 0);
 
   const discountAmount = appliedCoupon ? Math.round((totalPrice * appliedCoupon.discount) / 100) : 0;
-  const discountedTotal = Math.max(0, totalPrice - discountAmount - redeemedCoins);
+  const coinDiscountAmount = Math.floor(redeemedCoins / coinsPerRupeeDiscount);
+  const discountedTotal = Math.max(0, totalPrice - discountAmount - coinDiscountAmount);
 
   return (
     <CartContext.Provider
@@ -181,6 +197,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         discountAmount,
         redeemedCoins,
         setRedeemedCoins,
+        coinDiscountAmount,
         discountedTotal,
       }}
     >

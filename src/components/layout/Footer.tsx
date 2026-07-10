@@ -19,16 +19,23 @@ const footerColumns = [
       { label: "Contact Us", href: "/contact" },
       { label: "FAQ", href: "/contact#faq" },
       { label: "Shipping Info", href: "/contact" },
-      { label: "Returns", href: "/contact" },
+
     ],
   },
   {
     heading: "Company",
     links: [
-      { label: "About Us", href: "/about" },
       { label: "Our Story", href: "/about" },
       { label: "Blog", href: "/blog" },
-      { label: "Sustainability", href: "/about" },
+
+    ],
+  },
+  {
+    heading: "Legal",
+    links: [
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms & Conditions", href: "/terms" },
+      { label: "Cookie Policy", href: "/cookies" },
     ],
   },
 ];
@@ -37,8 +44,8 @@ export default function Footer() {
   return (
     <footer className="border-t border-border bg-background">
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-16">
-          <div className="col-span-2 md:col-span-1">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10 mb-16">
+          <div className="col-span-2 md:col-span-3 lg:col-span-1 mb-8 lg:mb-0">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <Image
                 src="/products/logo.png"
@@ -92,11 +99,14 @@ export default function Footer() {
           ))}
         </div>
         <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-[10px] tracking-wide text-muted-foreground">
-            © 2025 ASHL Herbal. All rights reserved.
+          <p className="text-[10px] tracking-wide text-muted-foreground flex items-center gap-4">
+            <span>© 2026 ASHL Herbal. All rights reserved.</span>
+            <span className="hidden md:inline">|</span>
+            <Link href="/privacy" className="hover:text-accent transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-accent transition-colors">Terms</Link>
           </p>
           <p className="text-[10px] tracking-wide text-muted-foreground">
-            Made with intention · No artificial ingredients · www.ashlherbal.com
+            Made with intention · No artificial ingredients · www.ashlshop.com
           </p>
         </div>
       </div>

@@ -1,58 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Star } from "lucide-react";
 
 type Review = {
-  id: number;
+  id: string | number;
+  product_id?: string;
   name: string;
   rating: number;
   comment: string;
-  date: string;
+  created_at?: string;
+  date?: string; // Fallback for UI if created_at is missing
 };
 
-export default function ReviewsSection() {
-  const [reviews, setReviews] = useState<Review[]>([
-    {
-      id: 1,
-      name: "Sneha M.",
-      rating: 5,
-      comment: "Absolutely love this! It feels so natural and leaves my skin feeling amazing.",
-      date: "Oct 12, 2025",
-    },
-    {
-      id: 2,
-      name: "Priya R.",
-      rating: 4,
-      comment: "Very gentle and smells wonderful. I've noticed a real difference in a week.",
-      date: "Sep 28, 2025",
-    },
-  ]);
-
+export default function ReviewsSection({ productId }: { productId: string }) {
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [newReview, setNewReview] = useState({ name: "", rating: 5, comment: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Fetch reviews on mount
+  useEffect(() => {
+    async function loadReviews() {
+      try {
+        const res = await fetch(`/api/reviews?productId=${productId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setReviews(data.reviews || []);
+        }
+      } catch (e) {
+        console.error("Failed to load reviews", e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadReviews();
+  }, [productId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReview.name || !newReview.comment) return;
     
     setIsSubmitting(true);
     
-    // Simulate network request
-    setTimeout(() => {
-      setReviews([
-        {
-          id: Date.now(),
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
           name: newReview.name,
           rating: newReview.rating,
-          comment: newReview.comment,
-          date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-        },
-        ...reviews,
-      ]);
-      setNewReview({ name: "", rating: 5, comment: "" });
+          comment: newReview.comment
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Prepend new review
+        setReviews([data.review, ...reviews]);
+        setNewReview({ name: "", rating: 5, comment: "" });
+      } else {
+        alert("Failed to submit review. Please try again.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("An error occurred");
+    } finally {
       setIsSubmitting(false);
-    }, 600);
+    }
   };
 
   const averageRating = reviews.length > 0 
@@ -147,7 +163,9 @@ export default function ReviewsSection() {
               <div key={review.id} className="border-b border-border/50 pb-6 last:border-0">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-foreground">{review.name}</span>
-                  <span className="text-xs text-muted-foreground">{review.date}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {review.created_at ? new Date(review.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : review.date}
+                  </span>
                 </div>
                 <div className="flex mb-3">
                   {[1, 2, 3, 4, 5].map((star) => (

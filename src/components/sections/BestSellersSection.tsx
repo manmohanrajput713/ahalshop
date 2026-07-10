@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ALL_PRODUCTS } from "@/lib/data";
 import { getProducts } from "@/app/admin/(dashboard)/products/actions";
 import { useCart } from "@/context/CartContext";
 import { useState, useEffect } from "react";
@@ -12,20 +11,22 @@ import WishlistButton from "@/components/products/WishlistButton";
 // Products marked as Bestseller or Popular
 export default function BestSellersSection() {
   const { addToCart } = useCart();
-  const [products, setProducts] = useState<any[]>(ALL_PRODUCTS);
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     getProducts().then(data => {
       if (data && data.length > 0) {
         setProducts(data);
       }
-    });
+    }).finally(() => setIsLoading(false));
   }, []);
 
   const bestSellers = products.filter(
     (p) => (p as any).badge === "Bestseller" || (p as any).badge === "Popular"
   );
 
+  if (isLoading) return null;
   if (bestSellers.length === 0) return null;
 
   return (
@@ -67,10 +68,16 @@ export default function BestSellersSection() {
                 sizes="(max-width: 768px) 50vw, 25vw"
               />
               <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/5 transition-colors duration-500" />
-              <span className="absolute top-3 left-3 bg-amber-50 text-amber-700 text-[9px] tracking-[0.15em] uppercase px-2.5 py-1 rounded-full flex items-center gap-1">
-                <Star size={10} fill="currentColor" /> {(product as any).badge}
-              </span>
-              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {(product as any).discount ? (
+                <span className="absolute top-3 left-3 bg-red-50 text-red-600 border border-red-100 text-[9px] tracking-[0.1em] font-medium uppercase px-2 py-1 rounded shadow-sm z-10">
+                  {(product as any).discount}
+                </span>
+              ) : (product as any).badge ? (
+                <span className="absolute top-3 left-3 bg-amber-50 text-amber-700 text-[9px] tracking-[0.15em] uppercase px-2.5 py-1 rounded-full flex items-center gap-1 z-10">
+                  <Star size={10} fill="currentColor" /> {(product as any).badge}
+                </span>
+              ) : null}
+              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
                 <WishlistButton productId={product.id} />
               </div>
             </div>
@@ -78,11 +85,18 @@ export default function BestSellersSection() {
               <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
                 {product.category}
               </p>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-foreground" style={{ fontFamily: "var(--font-lora), serif" }}>
+              <div className="flex items-start justify-between mt-0.5">
+                <p className="text-sm text-foreground pr-2 leading-tight" style={{ fontFamily: "var(--font-lora), serif" }}>
                   {product.name}
                 </p>
-                <p className="text-sm text-accent">{product.price}</p>
+                <div className="text-right shrink-0">
+                  <p className="text-sm text-accent font-medium">{product.price}</p>
+                  {(product as any).mrp && (
+                    <p className="text-[10px] text-muted-foreground line-through mt-0.5">
+                      {(product as any).mrp}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </Link>

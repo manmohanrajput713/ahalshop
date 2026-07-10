@@ -61,7 +61,24 @@ export async function getProducts() {
       return ALL_PRODUCTS;
     }
 
-    return data || [];
+    // Merge static MRP, discount, price, and variants data into dynamic products based on name
+    return (data || []).map(product => {
+      const staticProduct = ALL_PRODUCTS.find(p => 
+        p.name.toLowerCase() === product.name.toLowerCase() || 
+        p.name.toLowerCase().includes(product.name.toLowerCase()) ||
+        product.name.toLowerCase().includes(p.name.toLowerCase())
+      );
+      if (staticProduct) {
+        return {
+          ...product,
+          price: staticProduct.price,
+          mrp: staticProduct.mrp,
+          discount: staticProduct.discount,
+          variants: staticProduct.variants || [],
+        };
+      }
+      return product;
+    });
   } catch (err) {
     console.error(err);
     return ALL_PRODUCTS;
@@ -154,8 +171,9 @@ export async function editProduct(formData: FormData) {
   const stock = parseInt(formData.get("stock") as string) || 0;
   const imageFile = formData.get("imageFile") as File | null;
   const currentImg = formData.get("currentImg") as string;
+  const removeMainImage = formData.get("removeMainImage") === "true";
   const extraImageFiles = formData.getAll("extraImages") as File[];
-  const currentExtraImagesStr = formData.get("currentExtraImages") as string;
+  const keptExtraImagesStr = formData.get("keptExtraImages") as string;
   const alt = formData.get("alt") as string;
   const description = formData.get("description") as string;
   const size = formData.get("size") as string;
@@ -168,27 +186,30 @@ export async function editProduct(formData: FormData) {
   const benefits = benefitsStr ? benefitsStr.split(',').map(s => s.trim()).filter(Boolean) : null;
 
   try {
-    // If a new file is uploaded, handle it; otherwise keep the current image
-    const imgPath = (imageFile && imageFile.size > 0) 
-      ? await handleImageUpload(imageFile) 
-      : currentImg;
+    // Determine main image path
+    let imgPath = currentImg;
+    if (imageFile && imageFile.size > 0) {
+      imgPath = await handleImageUpload(imageFile);
+    } else if (removeMainImage) {
+      imgPath = "/products/placeholder.jpg";
+    }
 
-    // Handle extra images
-    let finalExtraImages = null;
+    // Handle extra/carousel images: start with kept images, then add newly uploaded
+    let keptExtraImages: string[] = [];
     try {
-      if (currentExtraImagesStr) {
-        finalExtraImages = JSON.parse(currentExtraImagesStr);
+      if (keptExtraImagesStr) {
+        keptExtraImages = JSON.parse(keptExtraImagesStr);
       }
     } catch (e) {
-      console.error("Failed to parse currentExtraImages", e);
+      console.error("Failed to parse keptExtraImages", e);
     }
 
     const validExtraImageFiles = extraImageFiles.filter(f => f && f.size > 0);
-    if (validExtraImageFiles.length > 0) {
-      finalExtraImages = await Promise.all(
-        validExtraImageFiles.map(f => handleImageUpload(f))
-      );
-    }
+    const newlyUploadedImages = await Promise.all(
+      validExtraImageFiles.map(f => handleImageUpload(f))
+    );
+
+    const finalExtraImages = [...keptExtraImages, ...newlyUploadedImages];
 
     const { error } = await supabase.from("products").update({
       name,
@@ -197,7 +218,7 @@ export async function editProduct(formData: FormData) {
       badge: badge || null,
       stock,
       img: imgPath,
-      images: finalExtraImages,
+      images: finalExtraImages.length > 0 ? finalExtraImages : null,
       alt: alt || name,
       description: description || null,
       size: size || null,

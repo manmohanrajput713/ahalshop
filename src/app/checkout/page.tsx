@@ -31,6 +31,7 @@ export default function CheckoutPage() {
     appliedCoupon,
     discountAmount,
     redeemedCoins,
+    coinDiscountAmount,
     discountedTotal
   } = useCart();
   const { getDefaultAddress } = useAddresses();
@@ -51,6 +52,23 @@ export default function CheckoutPage() {
   const [user, setUser] = useState<any>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  // Shipping settings from admin panel
+  const [shippingSettings, setShippingSettings] = useState({ freeShippingThreshold: 499, shippingFee: 49 });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.freeShippingThreshold !== undefined || data.shippingFee !== undefined) {
+          setShippingSettings({
+            freeShippingThreshold: data.freeShippingThreshold ?? 499,
+            shippingFee: data.shippingFee ?? 49,
+          });
+        }
+      })
+      .catch((e) => console.error("Failed to fetch shipping settings:", e));
+  }, []);
 
   useEffect(() => {
     // Get active session
@@ -81,8 +99,9 @@ export default function CheckoutPage() {
     }
   }, [orderPlaced]);
 
-  const shippingFee = discountedTotal >= 499 ? 0 : 49;
-  const finalTotal = discountedTotal + shippingFee;
+  const shippingFee = shippingSettings.shippingFee === 0 || discountedTotal >= shippingSettings.freeShippingThreshold ? 0 : shippingSettings.shippingFee;
+  const codFee = paymentMethod === "cod" ? 7 : 0;
+  const finalTotal = discountedTotal + shippingFee + codFee;
 
   const formattedTotal = new Intl.NumberFormat("en-IN", {
     style: "currency", currency: "INR", maximumFractionDigits: 0,
@@ -684,17 +703,23 @@ export default function CheckoutPage() {
                     </div>
                   )}
                   {redeemedCoins > 0 && (
-                    <div className="flex justify-between text-amber-600">
-                      <span className="flex items-center gap-1.5">
-                        <Coins size={14} /> ASHL Coins
+                    <div className="flex justify-between text-sm text-amber-700 mt-2 pt-2 border-t border-amber-100">
+                      <span className="flex items-center gap-1">
+                        <Coins size={12} /> ASHL Coins Redeemed ({redeemedCoins})
                       </span>
-                      <span>-₹{redeemedCoins}</span>
+                      <span>-₹{coinDiscountAmount}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-muted-foreground">
                     <span>Shipping</span>
                     <span>{shippingFee === 0 ? <span className="text-accent">Free</span> : `₹${shippingFee}`}</span>
                   </div>
+                  {paymentMethod === "cod" && (
+                    <div className="flex justify-between text-sm text-foreground/80">
+                      <span>Cash on Delivery Fee</span>
+                      <span>+₹7</span>
+                    </div>
+                  )}
                   {shippingFee > 0 && (
                     <p className="text-[10px] text-accent">Free shipping on orders above ₹499</p>
                   )}

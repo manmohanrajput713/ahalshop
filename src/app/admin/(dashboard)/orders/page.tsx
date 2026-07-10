@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Package, Truck, MapPin, CreditCard, Banknote,
   Search, Filter, RefreshCw, ChevronDown, ChevronUp,
-  Eye, Clock, CheckCircle2, Loader2, XCircle, AlertCircle, Ban
+  Eye, Clock, CheckCircle2, Loader2, XCircle, AlertCircle, Ban, RotateCcw
 } from "lucide-react";
 
 type OrderItem = {
@@ -50,6 +50,7 @@ const STATUS_OPTIONS = [
   { value: "out_for_delivery", label: "Out for Delivery", color: "bg-orange-500/10 text-orange-600" },
   { value: "delivered", label: "Delivered", color: "bg-green-500/10 text-green-600" },
   { value: "cancelled", label: "Cancelled", color: "bg-red-500/10 text-red-600" },
+  { value: "refunded", label: "Refunded", color: "bg-emerald-500/10 text-emerald-600" },
 ];
 
 export default function AdminOrdersPage() {
@@ -60,6 +61,8 @@ export default function AdminOrdersPage() {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [refundingOrderId, setRefundingOrderId] = useState<string | null>(null);
+  const [refundMessage, setRefundMessage] = useState<{ orderId: string; type: "success" | "error"; text: string } | null>(null);
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -115,6 +118,42 @@ export default function AdminOrdersPage() {
       console.error("Cancel failed:", e);
     }
     setCancellingOrderId(null);
+  };
+
+  const refundOrder = async (order: Order) => {
+    if (!order.razorpay_payment_id) {
+      setRefundMessage({ orderId: order.id, type: "error", text: "No Razorpay payment ID found. This order was likely COD." });
+      return;
+    }
+    const confirmed = window.confirm(`Are you sure you want to refund ₹${order.total} for order #${order.id}?\n\nThis will send the money back to the customer's account.`);
+    if (!confirmed) return;
+
+    setRefundingOrderId(order.id);
+    setRefundMessage(null);
+    try {
+      const res = await fetch("/api/razorpay/refund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentId: order.razorpay_payment_id,
+          orderId: order.id,
+          amount: order.total,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === order.id ? { ...o, status: "refunded" } : o))
+        );
+        setRefundMessage({ orderId: order.id, type: "success", text: `Refund of ₹${order.total} initiated successfully! Refund ID: ${data.refundId}` });
+      } else {
+        setRefundMessage({ orderId: order.id, type: "error", text: data.error || "Refund failed. Please try again." });
+      }
+    } catch (e) {
+      console.error("Refund failed:", e);
+      setRefundMessage({ orderId: order.id, type: "error", text: "Network error. Please try again." });
+    }
+    setRefundingOrderId(null);
   };
 
   // Filter & search
@@ -400,6 +439,39 @@ export default function AdminOrdersPage() {
                                 <><XCircle size={12} /> Cancel Order</>
                               )}
                             </button>
+                          </div>
+                        )}
+
+                        {/* Refund Button — visible for cancelled online-paid orders */}
+                        {order.status === "cancelled" && order.payment_method !== "cod" && order.razorpay_payment_id && (
+                          <div className="mt-4">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); refundOrder(order); }}
+                              disabled={refundingOrderId === order.id}
+                              className="w-full flex items-center justify-center gap-2 bg-emerald-600 text-white text-xs uppercase tracking-[0.1em] px-4 py-2.5 rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                            >
+                              {refundingOrderId === order.id ? (
+                                <><Loader2 size={12} className="animate-spin" /> Processing Refund...</>
+                              ) : (
+                                <><RotateCcw size={12} /> Refund ₹{order.total}</>
+                              )}
+                            </button>
+                            {refundMessage && refundMessage.orderId === order.id && (
+                              <p className={`text-[11px] mt-2 flex items-center gap-1 ${
+                                refundMessage.type === "success" ? "text-emerald-600" : "text-red-500"
+                              }`}>
+                                {refundMessage.type === "success" ? <CheckCircle2 size={11} /> : <AlertCircle size={11} />}
+                                {refundMessage.text}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Already refunded indicator */}
+                        {order.status === "refunded" && (
+                          <div className="mt-4 flex items-center gap-2 text-emerald-600 text-xs">
+                            <CheckCircle2 size={14} />
+                            <span>Refund processed for this order</span>
                           </div>
                         )}
                       </div>

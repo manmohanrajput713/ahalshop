@@ -7,7 +7,7 @@ import Footer from "@/components/layout/Footer";
 import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, Trash2, ArrowRight, Tag, X, Coins } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function CartPage() {
   const { 
@@ -21,9 +21,27 @@ export default function CartPage() {
     discountAmount,
     redeemedCoins,
     setRedeemedCoins,
+    coinDiscountAmount,
     discountedTotal 
   } = useCart();
-  const { balance: coinBalance } = useAshlCoins();
+  const { balance: coinBalance, coinsPerRupeeDiscount } = useAshlCoins();
+
+  // Shipping settings from admin panel
+  const [shippingSettings, setShippingSettings] = useState({ freeShippingThreshold: 499, shippingFee: 49 });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.freeShippingThreshold !== undefined || data.shippingFee !== undefined) {
+          setShippingSettings({
+            freeShippingThreshold: data.freeShippingThreshold ?? 499,
+            shippingFee: data.shippingFee ?? 49,
+          });
+        }
+      })
+      .catch((e) => console.error("Failed to fetch shipping settings:", e));
+  }, []);
 
   const formattedTotal = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -179,12 +197,12 @@ export default function CartPage() {
                       <span className="flex items-center gap-1">
                         <Coins size={12} /> ASHL Coins
                       </span>
-                      <span>-₹{redeemedCoins}</span>
+                      <span>-₹{coinDiscountAmount}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-muted-foreground">
                     <span>Shipping</span>
-                    <span>{discountedTotal >= 499 ? <span className="text-accent">Free</span> : "₹49"}</span>
+                    <span>{shippingSettings.shippingFee === 0 || discountedTotal >= shippingSettings.freeShippingThreshold ? <span className="text-accent">Free</span> : `₹${shippingSettings.shippingFee}`}</span>
                   </div>
                   <div className="border-t border-border pt-4 mt-4 flex justify-between font-medium text-lg">
                     <span>Total</span>
@@ -244,10 +262,10 @@ export default function CartPage() {
                         </span>
                         <span className="text-sm font-semibold text-amber-700">{coinBalance} coins</span>
                       </div>
-                      <p className="text-[10px] text-amber-600 mb-3">1 coin = ₹1 discount. Max usable: ₹{Math.min(coinBalance, Math.floor(totalPrice * 0.5))}</p>
+                      <p className="text-[10px] text-amber-600 mb-3">{coinsPerRupeeDiscount} coins = ₹1 discount. Max usable: {Math.min(coinBalance, Math.floor(totalPrice * 0.5) * coinsPerRupeeDiscount)} coins</p>
                       {redeemedCoins > 0 ? (
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-amber-700">Using {redeemedCoins} coins (-₹{redeemedCoins})</span>
+                          <span className="text-xs text-amber-700">Using {redeemedCoins} coins (-₹{coinDiscountAmount})</span>
                           <button
                             onClick={() => setRedeemedCoins(0)}
                             className="text-amber-600 hover:text-amber-800 text-xs underline"
@@ -255,16 +273,20 @@ export default function CartPage() {
                             Remove
                           </button>
                         </div>
-                      ) : (
+                      ) : coinBalance > 0 ? (
                         <button
                           onClick={() => {
-                            const maxCoins = Math.min(coinBalance, Math.floor(totalPrice * 0.5));
+                            const maxCoins = Math.min(coinBalance, Math.floor(totalPrice * 0.5) * coinsPerRupeeDiscount);
                             if (maxCoins > 0) setRedeemedCoins(maxCoins);
                           }}
                           className="w-full bg-amber-600 text-white text-xs tracking-[0.1em] uppercase py-2.5 rounded-md hover:bg-amber-700 transition-colors"
                         >
-                          Use {Math.min(coinBalance, Math.floor(totalPrice * 0.5))} Coins
+                          Use {Math.min(coinBalance, Math.floor(totalPrice * 0.5) * coinsPerRupeeDiscount)} Coins
                         </button>
+                      ) : (
+                        <div className="text-xs text-amber-700">
+                          Available: 0 coins
+                        </div>
                       )}
                     </div>
                   </div>

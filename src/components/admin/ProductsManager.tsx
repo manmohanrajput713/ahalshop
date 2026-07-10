@@ -2,17 +2,19 @@
 
 import { useState } from "react";
 import ProductForm from "./ProductForm";
-import { Trash2, Plus, Edit, Loader2, Package } from "lucide-react";
+import { Trash2, Plus, Edit, Loader2, Package, X } from "lucide-react";
 import Image from "next/image";
 import { deleteProduct } from "@/app/admin/(dashboard)/products/actions";
 
 export default function ProductsManager({ initialProducts }: { initialProducts: any[] }) {
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [productToDelete, setProductToDelete] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = (product: any) => {
     setEditingProduct(product);
+    setShowAddForm(false);
   };
 
   const handleCancelEdit = () => {
@@ -21,36 +23,23 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
 
   const handleSuccess = () => {
     setEditingProduct(null);
+    setShowAddForm(false);
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Add/Edit Product Form */}
-      <div className="lg:col-span-1 bg-card border border-border rounded-xl p-6 h-fit sticky top-8">
-        <div className="flex items-center gap-2 mb-6">
-          {editingProduct ? (
-            <Edit className="w-5 h-5 text-primary" />
-          ) : (
-            <Plus className="w-5 h-5 text-primary" />
-          )}
-          <h2 className="text-xl font-semibold text-foreground">
-            {editingProduct ? "Edit Product" : "Add New Product"}
-          </h2>
-        </div>
-        
-        {/* We use key to force re-mount when editingProduct changes, clearing old state */}
-        <ProductForm 
-          key={editingProduct ? editingProduct.id : "new"} 
-          initialData={editingProduct} 
-          onSuccess={handleSuccess}
-          onCancel={handleCancelEdit}
-        />
-      </div>
-
+    <>
       {/* Products List */}
-      <div className="lg:col-span-2 bg-card border border-border rounded-xl overflow-hidden h-fit">
-        <div className="p-6 border-b border-border">
-          <h2 className="text-xl font-semibold text-foreground">All Products ({initialProducts.length})</h2>
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">All Products ({initialProducts.length})</h2>
+          </div>
+          <button
+            onClick={() => { setShowAddForm(true); setEditingProduct(null); }}
+            className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs tracking-wider uppercase font-medium px-4 py-2.5 rounded-lg transition-colors"
+          >
+            <Plus size={16} /> Add Product
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
@@ -141,8 +130,9 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
               ))}
               {initialProducts.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
-                    No products found. Add one to get started.
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                    <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p>No products found. Add one to get started.</p>
                   </td>
                 </tr>
               )}
@@ -151,7 +141,58 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* ─── Edit / Add Product Modal ─── */}
+      {(editingProduct || showAddForm) && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div 
+            className="bg-card border border-border rounded-2xl w-full max-w-xl shadow-2xl my-8 animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div className="flex items-center gap-3">
+                {editingProduct ? (
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Edit className="w-4 h-4 text-primary" />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Plus className="w-4 h-4 text-primary" />
+                  </div>
+                )}
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    {editingProduct ? "Edit Product" : "Add New Product"}
+                  </h2>
+                  {editingProduct && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Editing: {editingProduct.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => { setEditingProduct(null); setShowAddForm(false); }}
+                className="text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-muted transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              <ProductForm
+                key={editingProduct ? editingProduct.id : "new"}
+                initialData={editingProduct}
+                onSuccess={handleSuccess}
+                onCancel={() => { setEditingProduct(null); setShowAddForm(false); }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Delete Confirmation Modal ─── */}
       {productToDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200">
@@ -163,7 +204,7 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
               Delete Product
             </h3>
             <p className="text-sm text-muted-foreground mb-6">
-              Are you sure you want to delete <span className="font-medium text-foreground">"{productToDelete.name}"</span>? This action cannot be undone.
+              Are you sure you want to delete <span className="font-medium text-foreground">&quot;{productToDelete.name}&quot;</span>? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -196,6 +237,6 @@ export default function ProductsManager({ initialProducts }: { initialProducts: 
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

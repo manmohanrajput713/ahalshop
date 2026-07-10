@@ -4,7 +4,6 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Image from "next/image";
 import Link from "next/link";
-import { ALL_PRODUCTS } from "@/lib/data";
 import { getProducts } from "@/app/admin/(dashboard)/products/actions";
 import { useCart } from "@/context/CartContext";
 import { useState, useEffect, useMemo } from "react";
@@ -21,7 +20,8 @@ function ShopContent() {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState<"default" | "price-asc" | "price-desc" | "name">("default");
   const [showFilters, setShowFilters] = useState(false);
-  const [products, setProducts] = useState(ALL_PRODUCTS);
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -29,7 +29,7 @@ function ShopContent() {
       if (data && data.length > 0) {
         setProducts(data);
       }
-    });
+    }).finally(() => setIsLoading(false));
   }, []);
 
   const categories = useMemo(() => {
@@ -244,11 +244,15 @@ function ShopContent() {
                         sizes="(max-width: 768px) 50vw, 33vw"
                       />
                       <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/5 transition-colors duration-500" />
-                      {(product as any).badge && !isOutOfStock && (
+                      {(product as any).discount && !isOutOfStock ? (
+                        <span className="absolute top-3 left-3 bg-red-50 border border-red-100 text-red-600 text-[9px] tracking-[0.2em] font-medium uppercase px-2.5 py-1 rounded">
+                          {(product as any).discount}
+                        </span>
+                      ) : (product as any).badge && !isOutOfStock ? (
                         <span className="absolute top-3 left-3 bg-background text-foreground text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 rounded">
                           {(product as any).badge}
                         </span>
-                      )}
+                      ) : null}
                       {isOutOfStock && (
                         <span className="absolute top-3 left-3 bg-red-50 border border-red-200 text-red-600 text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 rounded font-medium">
                           Out of Stock
@@ -259,11 +263,18 @@ function ShopContent() {
                       <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
                         {product.category}
                       </p>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-normal text-foreground" style={{ fontFamily: "var(--font-lora), serif" }}>
+                      <div className="flex items-start justify-between">
+                        <p className="text-sm font-normal text-foreground pr-2 leading-tight" style={{ fontFamily: "var(--font-lora), serif" }}>
                           {product.name}
                         </p>
-                        <p className={`text-sm ${isOutOfStock ? "text-muted-foreground line-through" : "text-accent"}`}>{product.price}</p>
+                        <div className="text-right shrink-0">
+                          <p className={`text-sm ${isOutOfStock ? "text-muted-foreground line-through" : "text-accent font-medium"}`}>{product.price}</p>
+                          {(product as any).mrp && !isOutOfStock && (
+                            <p className="text-[10px] text-muted-foreground line-through mt-0.5">
+                              {(product as any).mrp}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </Link>

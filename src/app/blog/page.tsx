@@ -27,7 +27,7 @@ const blogPosts = [
     category: "Hair Care Tips",
     readTime: "4 min read",
     date: "June 15, 2025",
-    img: "/products/hairoil1.jpg",
+    img: "/products/cover_hairoil.png",
   },
   {
     id: 3,

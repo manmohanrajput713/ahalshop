@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { Minus, Plus, Ban } from "lucide-react";
 
-type Variant = { size: string; price: string };
+type Variant = { size: string; price: string; mrp?: string; discount?: string };
 
 export default function AddToBagButton({ product, stock }: { product: any; stock: number }) {
   const { addToCart } = useCart();
@@ -16,6 +16,8 @@ export default function AddToBagButton({ product, stock }: { product: any; stock
   
   const selectedVariant = variants[selectedIndex] || null;
   const displayPrice = selectedVariant ? selectedVariant.price : product.price;
+  const displayMrp = selectedVariant ? selectedVariant.mrp : product.mrp;
+  const displayDiscount = selectedVariant ? selectedVariant.discount : product.discount;
 
   const isOutOfStock = stock <= 0;
 
@@ -62,9 +64,16 @@ export default function AddToBagButton({ product, stock }: { product: any; stock
             <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-3">
               Price
             </p>
-            <p className="text-3xl font-medium text-muted-foreground/50 pb-1 line-through">
-              {displayPrice}
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-3xl font-medium text-muted-foreground/50 pb-1 line-through">
+                {displayPrice}
+              </p>
+              {displayMrp && (
+                <p className="text-sm font-medium text-muted-foreground/30 line-through">
+                  {displayMrp}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -100,8 +109,16 @@ export default function AddToBagButton({ product, stock }: { product: any; stock
                   }
                 `}
               >
-                <span className="font-medium">{v.size}</span>
-                <span className="ml-2 text-xs opacity-75">{v.price}</span>
+                <div className="font-medium text-base text-center">{v.size}</div>
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  <span className="text-sm font-medium">{v.price}</span>
+                  {v.mrp && <span className="text-xs opacity-50 line-through">{v.mrp}</span>}
+                </div>
+                {v.discount && (
+                  <span className="absolute -top-2.5 -right-2 bg-red-100 text-red-600 text-[9px] font-bold tracking-[0.1em] px-1.5 py-0.5 rounded-sm border border-red-200">
+                    {v.discount}
+                  </span>
+                )}
                 {selectedIndex === idx && (
                   <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-accent rounded-full border-2 border-background" />
                 )}
@@ -145,18 +162,32 @@ export default function AddToBagButton({ product, stock }: { product: any; stock
         {/* Price Display */}
         <div className="text-right">
           <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-3">
-            Price
+            Total Price
           </p>
-          <p className="text-3xl font-medium text-foreground pb-1">
-            {displayPrice}
-          </p>
+          <div className="flex flex-col items-end">
+            <div className="flex items-center gap-3">
+              {displayDiscount && (
+                <span className="bg-red-50 border border-red-100 text-red-600 text-[10px] tracking-[0.1em] font-medium uppercase px-2 py-0.5 rounded shadow-sm">
+                  {displayDiscount}
+                </span>
+              )}
+              {displayMrp && (
+                <p className="text-base text-muted-foreground line-through">
+                  {displayMrp}
+                </p>
+              )}
+              <p className="text-3xl font-medium text-accent pb-1">
+                {displayPrice}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Add to Bag */}
+      {/* Button */}
       <button
         onClick={handleAdd}
-        className="w-full bg-primary text-primary-foreground uppercase tracking-[0.15em] text-xs py-5 hover:bg-primary/90 transition-colors rounded-sm"
+        className="w-full group relative overflow-hidden bg-foreground text-background uppercase tracking-[0.15em] text-xs py-5 rounded-sm transition-all hover:shadow-xl active:scale-[0.98]"
       >
         Add to Bag{selectedVariant ? ` — ${selectedVariant.size}` : ""}
       </button>

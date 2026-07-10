@@ -27,7 +27,7 @@ export default function Header() {
   const [user, setUser] = useState<any>(null);
   const { totalItems } = useCart();
   const { totalWishlist } = useWishlist();
-  const { balance, pendingCoins, transactions } = useAshlCoins();
+  const { balance, pendingCoins, transactions, coinsPerRupeeDiscount, rupeesPerCoinEarned } = useAshlCoins();
 
   const [authToast, setAuthToast] = useState<{ message: string; type: "login" | "logout" } | null>(null);
   const [isAuthToastVisible, setIsAuthToastVisible] = useState(false);
@@ -220,7 +220,7 @@ export default function Header() {
                             <span className="text-sm font-medium text-amber-600">+{totalPending} coins</span>
                           </div>
                         )}
-                        <p className="text-[10px] text-amber-500 mt-2">1 coin = ₹1 discount • Earn 10 coins per ₹100</p>
+                        <p className="text-[10px] text-amber-500 mt-2">{coinsPerRupeeDiscount} coins = ₹1 discount • Earn 1 coin per ₹{rupeesPerCoinEarned}</p>
                       </div>
 
                       {/* Activity List */}

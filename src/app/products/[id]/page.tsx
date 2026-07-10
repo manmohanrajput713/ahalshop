@@ -132,7 +132,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   <Leaf size={12} className="text-accent" /> 100% Natural
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.1em] uppercase bg-card border border-border px-3 py-1.5 rounded-full text-muted-foreground">
-                  <Info size={12} className="text-accent" /> {details.size}
+                  <Info size={12} className="text-accent" /> {product.variants?.[0]?.size || details.size}
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.1em] uppercase bg-card border border-border px-3 py-1.5 rounded-full text-muted-foreground">
                   <CheckCircle2 size={12} className="text-accent" /> {details.suitableFor.split("—")[0].trim()}
@@ -230,7 +230,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* Reviews Section */}
-        <ReviewsSection />
+        <ReviewsSection productId={productId.toString()} />
 
         {/* Related Products */}
         {allRelated.length > 0 && (
@@ -253,30 +253,49 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               </Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
-              {allRelated.map((rp) => (
+              {allRelated.map((rp) => {
+                const isOutOfStock = ((rp as any).stock ?? 0) <= 0;
+                return (
                 <Link key={rp.id} href={`/products/${rp.id}`} className="group block">
-                  <div className="relative overflow-hidden bg-card aspect-square sm:aspect-[4/3] rounded-lg">
+                  <div className={`relative overflow-hidden bg-card aspect-square sm:aspect-[4/3] rounded-lg ${isOutOfStock ? "opacity-75" : ""}`}>
                     <Image
                       src={rp.img}
                       alt={rp.alt || rp.name}
                       fill
-                      className="object-contain p-2 sm:p-4 transition-transform duration-700 group-hover:scale-105"
+                      className={`object-contain p-2 sm:p-4 transition-transform duration-700 group-hover:scale-105 ${isOutOfStock ? "grayscale-[30%]" : ""}`}
                       sizes="(max-width: 768px) 50vw, 25vw"
                     />
+                    <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/5 transition-colors duration-500" />
+                    {(rp as any).discount && !isOutOfStock ? (
+                      <span className="absolute top-3 left-3 bg-red-50 border border-red-100 text-red-600 text-[9px] tracking-[0.2em] font-medium uppercase px-2.5 py-1 rounded shadow-sm z-10">
+                        {(rp as any).discount}
+                      </span>
+                    ) : (rp as any).badge && !isOutOfStock ? (
+                      <span className="absolute top-3 left-3 bg-background text-foreground text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 rounded z-10">
+                        {(rp as any).badge}
+                      </span>
+                    ) : null}
                   </div>
                   <div className="pt-3">
                     <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
                       {rp.category}
                     </p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-foreground" style={{ fontFamily: "var(--font-lora), serif" }}>
+                    <div className="flex items-start justify-between">
+                      <p className="text-sm font-normal text-foreground pr-2 leading-tight" style={{ fontFamily: "var(--font-lora), serif" }}>
                         {rp.name}
                       </p>
-                      <p className="text-sm text-accent">{rp.price}</p>
+                      <div className="text-right shrink-0">
+                        <p className={`text-sm ${isOutOfStock ? "text-muted-foreground line-through" : "text-accent font-medium"}`}>{rp.price}</p>
+                        {(rp as any).mrp && !isOutOfStock && (
+                          <p className="text-[10px] text-muted-foreground line-through mt-0.5">
+                            {(rp as any).mrp}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Link>
-              ))}
+              )})}
             </div>
           </section>
         )}
