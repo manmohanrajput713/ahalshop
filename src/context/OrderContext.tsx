@@ -35,7 +35,7 @@ export type Order = {
   shiprocketShipmentId?: number;
   awbCode?: string;
   courierName?: string;
-  status: "placed" | "processing" | "shipped" | "in_transit" | "out_for_delivery" | "delivered" | "cancelled";
+  status: "placed" | "processing" | "shipped" | "in_transit" | "out_for_delivery" | "delivered" | "cancelled" | "refunded";
   createdAt: string;
 };
 

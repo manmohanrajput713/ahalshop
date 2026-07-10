@@ -18,7 +18,10 @@ export default async function CategoriesPage() {
 
       <div className="bg-card border border-border rounded-xl p-6">
         <h3 className="text-sm font-medium text-foreground mb-4">Add New Category</h3>
-        <form action={addCategory} className="flex gap-4 items-start max-w-md">
+        <form action={async (formData) => {
+          "use server";
+          await addCategory(formData);
+        }} className="flex gap-4 items-start max-w-md">
           <div className="flex-1">
             <input
               type="text"
