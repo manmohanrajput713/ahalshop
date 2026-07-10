@@ -4,7 +4,7 @@ import { useActionState, useState, useRef } from "react";
 import { addProduct, editProduct } from "@/app/admin/(dashboard)/products/actions";
 import { ALL_PRODUCTS } from "@/lib/data";
 import Image from "next/image";
-import { Upload, X, ImagePlus, Replace, Trash2 } from "lucide-react";
+import { Upload, X, ImagePlus, Replace, Trash2, Plus } from "lucide-react";
 
 export default function ProductForm({ 
   onSuccess, 
@@ -42,6 +42,45 @@ export default function ProductForm({
   const [newExtraFiles, setNewExtraFiles] = useState<File[]>([]);
   const [newExtraPreviews, setNewExtraPreviews] = useState<string[]>([]);
 
+  // Variants state
+  type Variant = { size: string; mrp: string; price: string; discount: string };
+  const resolvedVariants = (() => {
+    if (isEditing && initialData?.variants && Array.isArray(initialData.variants) && initialData.variants.length > 0) {
+      return initialData.variants.map((v: any) => ({
+        size: v.size || "",
+        mrp: v.mrp || "",
+        price: v.price || "",
+        discount: v.discount || "",
+      }));
+    }
+    // For new products, start with one empty variant row
+    return [{ size: "", mrp: "", price: "", discount: "" }];
+  })();
+  const [variants, setVariants] = useState<Variant[]>(resolvedVariants);
+
+  const addVariant = () => {
+    setVariants(prev => [...prev, { size: "", mrp: "", price: "", discount: "" }]);
+  };
+
+  const removeVariant = (index: number) => {
+    if (variants.length <= 1) return; // Keep at least one
+    setVariants(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateVariant = (index: number, field: keyof Variant, value: string) => {
+    setVariants(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v));
+  };
+
+  // Auto-calculate discount when mrp and price change
+  const autoCalcDiscount = (index: number, mrpVal: string, priceVal: string) => {
+    const mrpNum = parseFloat(mrpVal.replace(/[^0-9.]/g, ""));
+    const priceNum = parseFloat(priceVal.replace(/[^0-9.]/g, ""));
+    if (mrpNum > 0 && priceNum > 0 && mrpNum > priceNum) {
+      const discountPct = Math.round(((mrpNum - priceNum) / mrpNum) * 100);
+      updateVariant(index, "discount", `${discountPct}% OFF`);
+    }
+  };
+
   const [state, formAction, isPending] = useActionState(
     async (prevState: any, formData: FormData) => {
       // Inject our managed image data
@@ -53,6 +92,16 @@ export default function ProductForm({
       // Clear the default extraImages and re-add only our tracked files
       formData.delete("extraImages");
       newExtraFiles.forEach(f => formData.append("extraImages", f));
+
+      // Inject variants data
+      const validVariants = variants.filter(v => v.size.trim() && v.price.trim());
+      formData.set("variants", JSON.stringify(validVariants));
+      // Set main price/mrp/discount from first variant for backward compatibility
+      if (validVariants.length > 0) {
+        formData.set("price", validVariants[0].price);
+        formData.set("mrp", validVariants[0].mrp);
+        formData.set("discount", validVariants[0].discount);
+      }
 
       const result = isEditing ? await editProduct(formData) : await addProduct(formData);
       if (result.success && onSuccess) {
@@ -269,10 +318,6 @@ export default function ProductForm({
             )}
           </div>
           <div>
-            <label className={labelClass}>Price</label>
-            <input type="text" name="price" defaultValue={initialData?.price} required className={inputClass} placeholder="e.g. ₹499" />
-          </div>
-          <div>
             <label className={labelClass}>Badge</label>
             <input type="text" name="badge" defaultValue={initialData?.badge || ""} className={inputClass} placeholder="e.g. Bestseller" />
           </div>
@@ -289,6 +334,103 @@ export default function ProductForm({
 
       <hr className="border-border" />
 
+      {/* ─── PRICING & VARIANTS SECTION ─── */}
+      <div>
+        <h3 className="text-xs font-semibold tracking-widest uppercase text-muted-foreground mb-4 flex items-center gap-2">
+          Pricing & Variants
+          <span className="text-[10px] normal-case tracking-normal font-normal text-muted-foreground/60">
+            (add different sizes with their prices)
+          </span>
+        </h3>
+
+        <div className="space-y-3">
+          {variants.map((variant, idx) => (
+            <div key={idx} className="relative bg-muted/30 border border-border rounded-lg p-3">
+              {/* Variant label */}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] tracking-widest uppercase text-muted-foreground font-medium">
+                  Variant {idx + 1}
+                </span>
+                {variants.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeVariant(idx)}
+                    className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition-colors"
+                    title="Remove variant"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className={labelClass}>Size</label>
+                  <input
+                    type="text"
+                    value={variant.size}
+                    onChange={(e) => updateVariant(idx, "size", e.target.value)}
+                    className={inputClass}
+                    placeholder="e.g. 100 ml"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>MRP</label>
+                  <input
+                    type="text"
+                    value={variant.mrp}
+                    onChange={(e) => {
+                      updateVariant(idx, "mrp", e.target.value);
+                      autoCalcDiscount(idx, e.target.value, variant.price);
+                    }}
+                    className={inputClass}
+                    placeholder="e.g. ₹422"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Selling Price</label>
+                  <input
+                    type="text"
+                    value={variant.price}
+                    onChange={(e) => {
+                      updateVariant(idx, "price", e.target.value);
+                      autoCalcDiscount(idx, variant.mrp, e.target.value);
+                    }}
+                    className={inputClass}
+                    placeholder="e.g. ₹339"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Discount</label>
+                  <input
+                    type="text"
+                    value={variant.discount}
+                    onChange={(e) => updateVariant(idx, "discount", e.target.value)}
+                    className={`${inputClass} bg-muted/50`}
+                    placeholder="Auto-calculated"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={addVariant}
+            className="w-full border-2 border-dashed border-border rounded-lg py-2.5 flex items-center justify-center gap-2 text-xs text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+          >
+            <Plus size={14} />
+            Add Another Size / Variant
+          </button>
+        </div>
+
+        {/* Hidden inputs for form submission */}
+        <input type="hidden" name="price" value={variants[0]?.price || ""} />
+      </div>
+
+      <hr className="border-border" />
+
       {/* ─── DETAILS SECTION ─── */}
       <div>
         <h3 className="text-xs font-semibold tracking-widest uppercase text-muted-foreground mb-4">Details</h3>
@@ -298,10 +440,6 @@ export default function ProductForm({
             <textarea name="description" defaultValue={initialData?.description} className={inputClass} placeholder="Product description" rows={3} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelClass}>Size / Weight</label>
-              <input type="text" name="size" defaultValue={initialData?.size} className={inputClass} placeholder="e.g. 50 g" />
-            </div>
             <div>
               <label className={labelClass}>Suitable For</label>
               <input type="text" name="suitableFor" defaultValue={initialData?.suitable_for} className={inputClass} placeholder="e.g. All skin types" />

@@ -29,6 +29,7 @@ export default function CheckoutPage() {
     totalItems, 
     clearCart,
     appliedCoupon,
+    setAppliedCoupon,
     discountAmount,
     redeemedCoins,
     coinDiscountAmount,
@@ -65,6 +66,11 @@ export default function CheckoutPage() {
             freeShippingThreshold: data.freeShippingThreshold ?? 499,
             shippingFee: data.shippingFee ?? 49,
           });
+        }
+        if (data.enableCoupons !== undefined) {
+          if (!data.enableCoupons && appliedCoupon) {
+            setAppliedCoupon(null);
+          }
         }
       })
       .catch((e) => console.error("Failed to fetch shipping settings:", e));

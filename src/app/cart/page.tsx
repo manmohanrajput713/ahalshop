@@ -6,8 +6,9 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, Trash2, ArrowRight, Tag, X, Coins } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Minus, Plus, Trash2, ArrowRight, Tag, X, Coins, Loader2 } from "lucide-react";
+import { useState, useEffect, useTransition } from "react";
+import { validateCoupon } from "@/app/admin/(dashboard)/coupons/actions";
 
 export default function CartPage() {
   const { 
@@ -26,8 +27,9 @@ export default function CartPage() {
   } = useCart();
   const { balance: coinBalance, coinsPerRupeeDiscount } = useAshlCoins();
 
-  // Shipping settings from admin panel
+  // Settings from admin panel
   const [shippingSettings, setShippingSettings] = useState({ freeShippingThreshold: 499, shippingFee: 49 });
+  const [enableCoupons, setEnableCoupons] = useState(true);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -39,8 +41,15 @@ export default function CartPage() {
             shippingFee: data.shippingFee ?? 49,
           });
         }
+        if (data.enableCoupons !== undefined) {
+          setEnableCoupons(data.enableCoupons);
+          // If coupons are disabled but one is applied, remove it
+          if (!data.enableCoupons && appliedCoupon) {
+            setAppliedCoupon(null);
+          }
+        }
       })
-      .catch((e) => console.error("Failed to fetch shipping settings:", e));
+      .catch((e) => console.error("Failed to fetch settings:", e));
   }, []);
 
   const formattedTotal = new Intl.NumberFormat("en-IN", {
@@ -51,22 +60,25 @@ export default function CartPage() {
 
   const [couponCode, setCouponCode] = useState("");
   const [couponError, setCouponError] = useState("");
-
-  const VALID_COUPONS: Record<string, number> = {
-    ASHL10: 10,
-    HERBAL20: 20,
-    WELCOME15: 15,
-  };
+  const [isApplyingCoupon, startTransition] = useTransition();
 
   const handleApplyCoupon = () => {
     const code = couponCode.toUpperCase().trim();
-    if (VALID_COUPONS[code]) {
-      setAppliedCoupon({ code, discount: VALID_COUPONS[code] });
-      setCouponError("");
-    } else {
-      setCouponError("Invalid coupon code");
-      setAppliedCoupon(null);
-    }
+    if (!code) return;
+    
+    setCouponError("");
+    
+    startTransition(async () => {
+      const result = await validateCoupon(code);
+      
+      if (result.error) {
+        setCouponError(result.error);
+        setAppliedCoupon(null);
+      } else if (result.discount) {
+        setAppliedCoupon({ code, discount: result.discount });
+        setCouponError("");
+      }
+    });
   };
 
   const formattedDiscountedTotal = new Intl.NumberFormat("en-IN", {
@@ -211,46 +223,45 @@ export default function CartPage() {
                 </div>
 
                 {/* Coupon Code */}
-                <div className="mb-6">
-                  {appliedCoupon ? (
-                    <div className="flex items-center justify-between bg-green-50 border border-green-200 px-4 py-3 rounded-md">
-                      <span className="text-sm text-green-700 flex items-center gap-2">
-                        <Tag size={14} /> {appliedCoupon.code} applied
-                      </span>
-                      <button
-                        onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={couponCode}
-                          onChange={(e) => { setCouponCode(e.target.value); setCouponError(""); }}
-                          placeholder="Enter coupon code"
-                          className="flex-1 bg-background border border-border px-4 py-2.5 text-sm rounded-md focus:outline-none focus:border-accent transition-colors"
-                        />
+                {enableCoupons && (
+                  <div className="mb-6">
+                    {appliedCoupon ? (
+                      <div className="flex items-center justify-between bg-green-50 border border-green-200 px-4 py-3 rounded-md">
+                        <span className="text-sm text-green-700 flex items-center gap-2">
+                          <Tag size={14} /> {appliedCoupon.code} applied
+                        </span>
                         <button
-                          onClick={handleApplyCoupon}
-                          disabled={!couponCode.trim()}
-                          className="bg-primary text-primary-foreground text-xs tracking-[0.1em] uppercase px-5 py-2.5 hover:bg-primary/90 transition-colors disabled:opacity-50"
+                          onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}
+                          className="text-green-600 hover:text-green-800"
                         >
-                          Apply
+                          <X size={14} />
                         </button>
                       </div>
-                      {couponError && (
-                        <p className="text-xs text-red-500 mt-2">{couponError}</p>
-                      )}
-                      <p className="text-[10px] text-muted-foreground mt-2">
-                        Try: ASHL10, HERBAL20, WELCOME15
-                      </p>
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      <div>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={couponCode}
+                              onChange={(e) => { setCouponCode(e.target.value); setCouponError(""); }}
+                              placeholder="Enter coupon code"
+                              className="flex-1 bg-background border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 uppercase placeholder:normal-case"
+                            />
+                            <button
+                              onClick={handleApplyCoupon}
+                              disabled={!couponCode.trim() || isApplyingCoupon}
+                              className="bg-[#9ca89a] hover:bg-[#8b9789] text-white px-6 py-3 rounded-lg text-xs font-bold tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                            >
+                              {isApplyingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "APPLY"}
+                            </button>
+                          </div>
+                        {couponError && (
+                          <p className="text-xs text-red-500 mt-2">{couponError}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* ASHL Coins */}
                 {coinBalance > 0 && (

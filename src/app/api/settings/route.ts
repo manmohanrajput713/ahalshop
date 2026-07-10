@@ -21,7 +21,8 @@ export async function GET() {
         coinsPerRupeeDiscount: 5,
         rupeesPerCoinEarned: 10,
         freeShippingThreshold: 499,
-        shippingFee: 49
+        shippingFee: 49,
+        enableCoupons: true
       });
     }
 
@@ -33,7 +34,8 @@ export async function GET() {
         coinsPerRupeeDiscount: 5,
         rupeesPerCoinEarned: 10,
         freeShippingThreshold: 499,
-        shippingFee: 49
+        shippingFee: 49,
+        enableCoupons: true
       };
     }
 
@@ -41,7 +43,8 @@ export async function GET() {
       coinsPerRupeeDiscount: settings.coinsPerRupeeDiscount ?? 5,
       rupeesPerCoinEarned: settings.rupeesPerCoinEarned ?? 10,
       freeShippingThreshold: settings.freeShippingThreshold ?? 499,
-      shippingFee: settings.shippingFee ?? 49
+      shippingFee: settings.shippingFee ?? 49,
+      enableCoupons: settings.enableCoupons ?? true
     });
   } catch (error: any) {
     console.error("Error fetching settings:", error);

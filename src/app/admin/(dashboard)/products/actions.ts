@@ -61,7 +61,7 @@ export async function getProducts() {
       return ALL_PRODUCTS;
     }
 
-    // Merge static MRP, discount, price, and variants data into dynamic products based on name
+    // Merge static data as fallback — DB values always take priority
     return (data || []).map(product => {
       const staticProduct = ALL_PRODUCTS.find(p => 
         p.name.toLowerCase() === product.name.toLowerCase() || 
@@ -70,11 +70,13 @@ export async function getProducts() {
       );
       if (staticProduct) {
         return {
+          ...staticProduct,
           ...product,
-          price: staticProduct.price,
-          mrp: staticProduct.mrp,
-          discount: staticProduct.discount,
-          variants: staticProduct.variants || [],
+          // Only fall back to static values when DB value is missing
+          price: product.price || staticProduct.price,
+          mrp: product.mrp || staticProduct.mrp,
+          discount: product.discount || staticProduct.discount,
+          variants: product.variants || staticProduct.variants || [],
         };
       }
       return product;
@@ -94,20 +96,31 @@ export async function addProduct(formData: FormData) {
   const name = formData.get("name") as string;
   const category = formData.get("category") as string;
   const price = formData.get("price") as string;
+  const mrp = formData.get("mrp") as string;
+  const discount = formData.get("discount") as string;
   const badge = formData.get("badge") as string;
   const stock = parseInt(formData.get("stock") as string) || 0;
   const imageFile = formData.get("imageFile") as File | null;
   const extraImageFiles = formData.getAll("extraImages") as File[];
   const alt = formData.get("alt") as string;
   const description = formData.get("description") as string;
-  const size = formData.get("size") as string;
   const suitableFor = formData.get("suitableFor") as string;
   const ingredientsStr = formData.get("ingredients") as string;
   const benefitsStr = formData.get("benefits") as string;
   const howToUse = formData.get("howToUse") as string;
+  const variantsStr = formData.get("variants") as string;
 
   const ingredients = ingredientsStr ? ingredientsStr.split(',').map(s => s.trim()).filter(Boolean) : null;
   const benefits = benefitsStr ? benefitsStr.split(',').map(s => s.trim()).filter(Boolean) : null;
+  let variants: any[] | null = null;
+  try {
+    if (variantsStr) variants = JSON.parse(variantsStr);
+  } catch (e) {
+    console.error("Failed to parse variants", e);
+  }
+
+  // Use first variant's size as the product size
+  const size = variants && variants.length > 0 ? variants[0].size : null;
 
   try {
     const imgPath = await handleImageUpload(imageFile);
@@ -123,6 +136,8 @@ export async function addProduct(formData: FormData) {
         name,
         category,
         price,
+        mrp: mrp || null,
+        discount: discount || null,
         badge: badge || null,
         stock,
         img: imgPath,
@@ -134,6 +149,7 @@ export async function addProduct(formData: FormData) {
         ingredients: ingredients,
         benefits: benefits,
         how_to_use: howToUse || null,
+        variants: variants && variants.length > 0 ? variants : null,
       },
     ]);
 
@@ -143,6 +159,8 @@ export async function addProduct(formData: FormData) {
 
     revalidatePath("/admin/products");
     revalidatePath("/");
+    revalidatePath("/shop");
+    revalidatePath("/products", "layout");
     
     return { success: true };
   } catch (err: any) {
@@ -167,6 +185,8 @@ export async function editProduct(formData: FormData) {
   const name = formData.get("name") as string;
   const category = formData.get("category") as string;
   const price = formData.get("price") as string;
+  const mrp = formData.get("mrp") as string;
+  const discount = formData.get("discount") as string;
   const badge = formData.get("badge") as string;
   const stock = parseInt(formData.get("stock") as string) || 0;
   const imageFile = formData.get("imageFile") as File | null;
@@ -176,14 +196,23 @@ export async function editProduct(formData: FormData) {
   const keptExtraImagesStr = formData.get("keptExtraImages") as string;
   const alt = formData.get("alt") as string;
   const description = formData.get("description") as string;
-  const size = formData.get("size") as string;
   const suitableFor = formData.get("suitableFor") as string;
   const ingredientsStr = formData.get("ingredients") as string;
   const benefitsStr = formData.get("benefits") as string;
   const howToUse = formData.get("howToUse") as string;
+  const variantsStr = formData.get("variants") as string;
 
   const ingredients = ingredientsStr ? ingredientsStr.split(',').map(s => s.trim()).filter(Boolean) : null;
   const benefits = benefitsStr ? benefitsStr.split(',').map(s => s.trim()).filter(Boolean) : null;
+  let variants: any[] | null = null;
+  try {
+    if (variantsStr) variants = JSON.parse(variantsStr);
+  } catch (e) {
+    console.error("Failed to parse variants", e);
+  }
+
+  // Use first variant's size as the product size
+  const size = variants && variants.length > 0 ? variants[0].size : null;
 
   try {
     // Determine main image path
@@ -215,6 +244,8 @@ export async function editProduct(formData: FormData) {
       name,
       category,
       price,
+      mrp: mrp || null,
+      discount: discount || null,
       badge: badge || null,
       stock,
       img: imgPath,
@@ -226,6 +257,7 @@ export async function editProduct(formData: FormData) {
       ingredients: ingredients,
       benefits: benefits,
       how_to_use: howToUse || null,
+      variants: variants && variants.length > 0 ? variants : null,
     }).eq("id", id);
 
     if (error) {
@@ -234,6 +266,8 @@ export async function editProduct(formData: FormData) {
 
     revalidatePath("/admin/products");
     revalidatePath("/");
+    revalidatePath("/shop");
+    revalidatePath("/products", "layout");
     
     return { success: true };
   } catch (err: any) {
@@ -305,6 +339,8 @@ export async function deleteProduct(id: number) {
 
     revalidatePath("/admin/products");
     revalidatePath("/");
+    revalidatePath("/shop");
+    revalidatePath("/products", "layout");
     
     return { success: true };
   } catch (err: any) {

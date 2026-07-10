@@ -75,10 +75,12 @@ export async function GET() {
     // 7. Top selling products (from order items JSON)
     const productCounts: Record<string, number> = {};
     for (const o of allOrders) {
-      if (Array.isArray(o.items)) {
-        for (const item of o.items) {
-          const name = item.name || "Unknown";
-          productCounts[name] = (productCounts[name] || 0) + (item.quantity || 1);
+      if (o.status !== "cancelled" && o.status !== "refunded") {
+        if (Array.isArray(o.items)) {
+          for (const item of o.items) {
+            const name = item.name || "Unknown";
+            productCounts[name] = (productCounts[name] || 0) + (item.quantity || 1);
+          }
         }
       }
     }

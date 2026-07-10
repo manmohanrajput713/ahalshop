@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, LogOut, Settings, Package, Home, Menu, X, MessageSquare } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, LogOut, Settings, Package, Home, Menu, X, MessageSquare, TicketPercent } from "lucide-react";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -15,6 +15,7 @@ export default function Sidebar() {
     { href: "/admin/orders", label: "Orders", icon: Package },
     { href: "/admin/products", label: "Products", icon: ShoppingBag },
     { href: "/admin/reviews", label: "Reviews", icon: MessageSquare },
+    { href: "/admin/coupons", label: "Coupons", icon: TicketPercent },
     { href: "/admin/settings", label: "Settings", icon: Settings },
     { href: "/", label: "Back to Store", icon: Home },
   ];
