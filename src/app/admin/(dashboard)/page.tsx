@@ -127,7 +127,7 @@ export default function AdminDashboardPage() {
     {
       label: "Total Revenue",
       value: formatCurrency(data.totalRevenue),
-      description: "Excluding cancelled orders",
+      description: "Excluding cancelled & refunded orders",
       icon: IndianRupee,
       accent: "bg-emerald-500/10 text-emerald-600",
     },

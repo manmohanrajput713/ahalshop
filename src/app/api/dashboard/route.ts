@@ -28,7 +28,7 @@ export async function GET() {
 
     // 2. Calculate total revenue (excluding cancelled orders)
     const totalRevenue = allOrders
-      .filter((o) => o.status !== "cancelled")
+      .filter((o) => o.status !== "cancelled" && o.status !== "refunded")
       .reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
 
     // 3. Total orders count

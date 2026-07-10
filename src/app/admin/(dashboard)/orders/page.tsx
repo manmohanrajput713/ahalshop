@@ -171,7 +171,7 @@ export default function AdminOrdersPage() {
   });
 
   // Stats
-  const totalRevenue = orders.filter((o) => o.status !== "cancelled").reduce((sum, o) => sum + o.total, 0);
+  const totalRevenue = orders.filter((o) => o.status !== "cancelled" && o.status !== "refunded").reduce((sum, o) => sum + o.total, 0);
   const pendingOrders = orders.filter((o) => ["placed", "processing"].includes(o.status)).length;
   const shippedOrders = orders.filter((o) => ["shipped", "in_transit", "out_for_delivery"].includes(o.status)).length;
   const deliveredOrders = orders.filter((o) => o.status === "delivered").length;
