@@ -3,6 +3,7 @@ import { Lora, Jost } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/providers/Providers";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { Analytics } from "@vercel/analytics/react";
 
 const lora = Lora({
   variable: "--font-lora",
@@ -81,6 +82,7 @@ export default function RootLayout({
         </Providers>
       </body>
       {process.env.NEXT_PUBLIC_GA_ID && <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />}
+      <Analytics />
     </html>
   );
 }
