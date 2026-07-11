@@ -243,7 +243,7 @@ export default function AdminDashboardPage() {
 
                     {/* Order info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium text-foreground truncate">
                           {order.customerName}
                         </p>
@@ -251,19 +251,19 @@ export default function AdminDashboardPage() {
                           {statusInfo.label}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
-                        <span>#{order.id.slice(0, 8)}…</span>
-                        <span>•</span>
-                        <span>{order.itemCount} {order.itemCount === 1 ? "item" : "items"}</span>
-                        <span>•</span>
-                        <span className="inline-flex items-center gap-1">
+                      <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="whitespace-nowrap">#{order.id.slice(0, 8)}…</span>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="whitespace-nowrap">{order.itemCount} {order.itemCount === 1 ? "item" : "items"}</span>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap">
                           {order.paymentMethod === "cod" ? (
                             <><Banknote size={10} /> COD</>
                           ) : (
                             <><CreditCard size={10} /> Prepaid</>
                           )}
                         </span>
-                      </p>
+                      </div>
                     </div>
 
                     {/* Amount & date */}
@@ -271,7 +271,7 @@ export default function AdminDashboardPage() {
                       <p className="text-sm font-semibold text-foreground">
                         {formatCurrency(order.total)}
                       </p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                      <p className="text-[10px] text-muted-foreground mt-0.5 whitespace-nowrap">
                         {formatDate(order.createdAt)} · {formatTime(order.createdAt)}
                       </p>
                     </div>

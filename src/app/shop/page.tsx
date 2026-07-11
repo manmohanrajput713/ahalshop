@@ -8,7 +8,7 @@ import { getProducts } from "@/app/admin/(dashboard)/products/actions";
 import { getCategories } from "@/app/admin/(dashboard)/categories/actions";
 import { useCart } from "@/context/CartContext";
 import { useState, useEffect, useMemo } from "react";
-import { SlidersHorizontal, X, Search } from "lucide-react";
+import { SlidersHorizontal, X, Search, Gift } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
@@ -24,7 +24,7 @@ function ShopContent() {
   const [products, setProducts] = useState<any[]>([]);
   const [dbCategories, setDbCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { addToCart } = useCart();
+  const { addToCart, buyXGetYSettings } = useCart();
 
   useEffect(() => {
     Promise.all([
@@ -269,6 +269,17 @@ function ShopContent() {
                           Out of Stock
                         </span>
                       )}
+                      {!isOutOfStock && buyXGetYSettings.enabled && (() => {
+                        const unitPrice = parseFloat(product.price?.replace(/[^\d.]/g, "")) || 0;
+                        if (unitPrice >= buyXGetYSettings.minPrice) {
+                          return (
+                            <span className="absolute bottom-3 left-3 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[8px] tracking-[0.1em] font-semibold uppercase px-2 py-1 rounded-full shadow-sm z-10 flex items-center gap-1">
+                              <Gift size={10} /> Buy {buyXGetYSettings.buyQty} Get {buyXGetYSettings.freeQty} Free
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                     <div className="pt-3 pb-2">
                       <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">

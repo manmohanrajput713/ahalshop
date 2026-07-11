@@ -22,13 +22,16 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Hamburger Button */}
-      <button 
-        onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-card rounded-md border border-border shadow-sm text-foreground"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+      {/* Mobile Header Bar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-md border-b border-border z-30 flex items-center px-4">
+        <button 
+          onClick={() => setIsOpen(true)}
+          className="p-2 bg-card rounded-md border border-border shadow-sm text-foreground"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <span className="ml-4 font-bold text-foreground">ASHL Admin</span>
+      </div>
 
       {/* Overlay for mobile */}
       {isOpen && (

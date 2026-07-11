@@ -11,7 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import { useState, useEffect } from "react";
-import { ArrowLeft, ShieldCheck, Truck, CreditCard, Banknote, ChevronRight, Loader2, XCircle, Package, MapPin, Tag, Coins, Smartphone, Landmark } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Truck, CreditCard, Banknote, ChevronRight, Loader2, XCircle, Package, MapPin, Tag, Coins, Smartphone, Landmark, Gift } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import AuthModal from "@/components/auth/AuthModal";
 
@@ -33,6 +33,8 @@ export default function CheckoutPage() {
     discountAmount,
     redeemedCoins,
     coinDiscountAmount,
+    buyXGetYDiscount,
+    buyXGetYSettings,
     discountedTotal
   } = useCart();
   const { getDefaultAddress } = useAddresses();
@@ -714,6 +716,14 @@ export default function CheckoutPage() {
                         <Coins size={12} /> ASHL Coins Redeemed ({redeemedCoins})
                       </span>
                       <span>-₹{coinDiscountAmount}</span>
+                    </div>
+                  )}
+                  {buyXGetYDiscount > 0 && (
+                    <div className="flex justify-between text-emerald-600">
+                      <span className="flex items-center gap-1">
+                        <Gift size={12} /> Buy {buyXGetYSettings.buyQty} Get {buyXGetYSettings.freeQty} Free
+                      </span>
+                      <span>-₹{buyXGetYDiscount}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-muted-foreground">

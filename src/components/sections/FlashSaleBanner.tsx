@@ -4,6 +4,13 @@ import { useState, useEffect } from "react";
 import { Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
+type BuyXGetYOffer = {
+  enabled: boolean;
+  buyQty: number;
+  freeQty: number;
+  minPrice: number;
+};
+
 function useCountdown(targetDate: Date) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
@@ -33,7 +40,38 @@ function useCountdown(targetDate: Date) {
   return timeLeft;
 }
 
+function getOfferTitle(buyQty: number, freeQty: number): string {
+  if (freeQty === 1) {
+    return `Buy ${buyQty}, Get ${buyQty + freeQty}${getOrdinalSuffix(buyQty + freeQty)} Free`;
+  }
+  return `Buy ${buyQty}, Get ${freeQty} Free`;
+}
+
+function getOrdinalSuffix(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+}
+
 export default function FlashSaleBanner() {
+  const [offer, setOffer] = useState<BuyXGetYOffer | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        setOffer({
+          enabled: data.buyXGetYEnabled ?? false,
+          buyQty: data.buyXGetYBuyQty ?? 2,
+          freeQty: data.buyXGetYFreeQty ?? 1,
+          minPrice: data.buyXGetYMinPrice ?? 200,
+        });
+      })
+      .catch(() => setOffer(null))
+      .finally(() => setIsLoading(false));
+  }, []);
+
   // Set sale end to 3 days from now (rolling)
   const [saleEnd] = useState(() => {
     const d = new Date();
@@ -43,6 +81,16 @@ export default function FlashSaleBanner() {
   });
 
   const { days, hours, minutes, seconds } = useCountdown(saleEnd);
+
+  // Don't render if offer is disabled or loading
+  if (isLoading || !offer?.enabled) return null;
+
+  const title = getOfferTitle(offer.buyQty, offer.freeQty);
+  const totalRequired = offer.buyQty + offer.freeQty;
+  const description =
+    offer.freeQty === 1
+      ? `Add ${totalRequired} items (₹${offer.minPrice}+) to your bag and the lowest priced product is on us!`
+      : `Add ${totalRequired} items (₹${offer.minPrice}+) to your bag and the ${offer.freeQty} lowest priced products are on us!`;
 
   return (
     <section className="bg-primary text-primary-foreground">
@@ -60,10 +108,10 @@ export default function FlashSaleBanner() {
               className="text-3xl lg:text-4xl font-normal mb-3"
               style={{ fontFamily: "var(--font-lora), serif" }}
             >
-              Buy 2, Get 3rd <em className="italic">Free</em>
+              {title.split("Free")[0]}<em className="italic">Free</em>
             </h2>
             <p className="text-sm opacity-70 font-light max-w-md">
-              Stock up on your herbal essentials. Add 3 items to your bag and the lowest priced product is on us!
+              {description}
             </p>
             <Link
               href="/shop"

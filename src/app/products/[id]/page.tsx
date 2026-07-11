@@ -9,6 +9,7 @@ import Footer from "@/components/layout/Footer";
 import ReviewsSection from "@/components/products/ReviewsSection";
 import ProductCarousel from "@/components/products/ProductCarousel";
 import AddToBagButton from "./AddToBagButton";
+import BuyXGetYBanner from "./BuyXGetYBanner";
 import { Leaf, Droplets, CheckCircle2, Info, ChevronRight } from "lucide-react";
 
 // Next.js dynamic route params
@@ -75,17 +76,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           <span className="text-foreground">{product.name}</span>
         </nav>
 
-        {/* Promotional Banner */}
-        {/*
-        <div className="bg-accent/10 border border-accent/20 rounded-md p-4 mb-12 text-center">
-          <p className="text-accent font-medium tracking-wide">
-            Buy 2, Get 3rd Free
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Add 3 items to bag to get the lowest priced product for free.
-          </p>
-        </div>
-        */}
+        {/* Buy X Get Y Promotional Banner */}
+        <BuyXGetYBanner productPrice={product.price} />
 
         {/* Product Details Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20 mb-16">

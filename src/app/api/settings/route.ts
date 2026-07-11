@@ -22,7 +22,11 @@ export async function GET() {
         rupeesPerCoinEarned: 10,
         freeShippingThreshold: 499,
         shippingFee: 49,
-        enableCoupons: true
+        enableCoupons: true,
+        buyXGetYEnabled: false,
+        buyXGetYBuyQty: 2,
+        buyXGetYFreeQty: 1,
+        buyXGetYMinPrice: 200,
       });
     }
 
@@ -35,7 +39,11 @@ export async function GET() {
         rupeesPerCoinEarned: 10,
         freeShippingThreshold: 499,
         shippingFee: 49,
-        enableCoupons: true
+        enableCoupons: true,
+        buyXGetYEnabled: false,
+        buyXGetYBuyQty: 2,
+        buyXGetYFreeQty: 1,
+        buyXGetYMinPrice: 200,
       };
     }
 
@@ -44,7 +52,11 @@ export async function GET() {
       rupeesPerCoinEarned: settings.rupeesPerCoinEarned ?? 10,
       freeShippingThreshold: settings.freeShippingThreshold ?? 499,
       shippingFee: settings.shippingFee ?? 49,
-      enableCoupons: settings.enableCoupons ?? true
+      enableCoupons: settings.enableCoupons ?? true,
+      buyXGetYEnabled: settings.buyXGetYEnabled ?? false,
+      buyXGetYBuyQty: settings.buyXGetYBuyQty ?? 2,
+      buyXGetYFreeQty: settings.buyXGetYFreeQty ?? 1,
+      buyXGetYMinPrice: settings.buyXGetYMinPrice ?? 200,
     });
   } catch (error: any) {
     console.error("Error fetching settings:", error);

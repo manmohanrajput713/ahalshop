@@ -5,12 +5,12 @@ import Link from "next/link";
 import { getProducts } from "@/app/admin/(dashboard)/products/actions";
 import { useCart } from "@/context/CartContext";
 import { useState, useEffect } from "react";
-import { Star, ChevronRight } from "lucide-react";
+import { Star, ChevronRight, Gift } from "lucide-react";
 import WishlistButton from "@/components/products/WishlistButton";
 
 // Products marked as Bestseller or Popular
 export default function BestSellersSection() {
-  const { addToCart } = useCart();
+  const { addToCart, buyXGetYSettings } = useCart();
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -77,6 +77,17 @@ export default function BestSellersSection() {
                   <Star size={10} fill="currentColor" /> {(product as any).badge}
                 </span>
               ) : null}
+              {buyXGetYSettings.enabled && (() => {
+                const unitPrice = parseFloat(product.price?.replace(/[^\d.]/g, "")) || 0;
+                if (unitPrice >= buyXGetYSettings.minPrice) {
+                  return (
+                    <span className="absolute bottom-3 left-3 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[8px] tracking-[0.1em] font-semibold uppercase px-2 py-1 rounded-full shadow-sm z-10 flex items-center gap-1">
+                      <Gift size={10} /> Buy {buyXGetYSettings.buyQty} Get {buyXGetYSettings.freeQty} Free
+                    </span>
+                  );
+                }
+                return null;
+              })()}
               <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
                 <WishlistButton productId={product.id} />
               </div>

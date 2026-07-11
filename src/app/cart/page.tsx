@@ -6,7 +6,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, Trash2, ArrowRight, Tag, X, Coins, Loader2 } from "lucide-react";
+import { Minus, Plus, Trash2, ArrowRight, Tag, X, Coins, Loader2, Gift } from "lucide-react";
 import { useState, useEffect, useTransition } from "react";
 import { validateCoupon } from "@/app/admin/(dashboard)/coupons/actions";
 
@@ -23,6 +23,8 @@ export default function CartPage() {
     redeemedCoins,
     setRedeemedCoins,
     coinDiscountAmount,
+    buyXGetYDiscount,
+    buyXGetYSettings,
     discountedTotal 
   } = useCart();
   const { balance: coinBalance, coinsPerRupeeDiscount } = useAshlCoins();
@@ -81,11 +83,14 @@ export default function CartPage() {
     });
   };
 
+  const isFreeShipping = shippingSettings.shippingFee === 0 || discountedTotal >= shippingSettings.freeShippingThreshold;
+  const finalTotal = isFreeShipping ? discountedTotal : discountedTotal + shippingSettings.shippingFee;
+
   const formattedDiscountedTotal = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(discountedTotal);
+  }).format(finalTotal);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -212,6 +217,31 @@ export default function CartPage() {
                       <span>-₹{coinDiscountAmount}</span>
                     </div>
                   )}
+                  {buyXGetYDiscount > 0 && (
+                    <div className="flex justify-between text-emerald-600">
+                      <span className="flex items-center gap-1">
+                        <Gift size={12} /> Buy {buyXGetYSettings.buyQty} Get {buyXGetYSettings.freeQty} Free
+                      </span>
+                      <span>-₹{buyXGetYDiscount}</span>
+                    </div>
+                  )}
+                  {buyXGetYSettings.enabled && buyXGetYDiscount === 0 && (() => {
+                    const groupSize = buyXGetYSettings.buyQty + buyXGetYSettings.freeQty;
+                    const qualifyingCount = items.reduce((sum, item) => {
+                      const unitPrice = parseFloat(item.price.replace(/[^\d.]/g, "")) || 0;
+                      return unitPrice >= buyXGetYSettings.minPrice ? sum + item.quantity : sum;
+                    }, 0);
+                    const itemsNeeded = groupSize - qualifyingCount;
+                    if (qualifyingCount > 0 && itemsNeeded > 0) {
+                      return (
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2 text-[11px] text-emerald-700 flex items-center gap-1.5">
+                          <Gift size={12} />
+                          Add {itemsNeeded} more {itemsNeeded === 1 ? "item" : "items"} (≥ ₹{buyXGetYSettings.minPrice}) to get {buyXGetYSettings.freeQty} free!
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                   <div className="flex justify-between text-muted-foreground">
                     <span>Shipping</span>
                     <span>{shippingSettings.shippingFee === 0 || discountedTotal >= shippingSettings.freeShippingThreshold ? <span className="text-accent">Free</span> : `₹${shippingSettings.shippingFee}`}</span>

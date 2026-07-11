@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Gift } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getProducts } from "@/app/admin/(dashboard)/products/actions";
 import { useCart } from "@/context/CartContext";
@@ -11,7 +11,7 @@ import WishlistButton from "@/components/products/WishlistButton";
 export default function CollectionSection() {
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { addToCart } = useCart();
+  const { addToCart, buyXGetYSettings } = useCart();
 
   useEffect(() => {
     getProducts().then(data => {
@@ -82,6 +82,17 @@ export default function CollectionSection() {
                   {product.badge}
                 </span>
               ) : null}
+              {buyXGetYSettings.enabled && (() => {
+                const unitPrice = parseFloat(product.price?.replace(/[^\d.]/g, "")) || 0;
+                if (unitPrice >= buyXGetYSettings.minPrice) {
+                  return (
+                    <span className="absolute bottom-3 left-3 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[8px] tracking-[0.1em] font-semibold uppercase px-2 py-1 rounded-full shadow-sm z-10 flex items-center gap-1">
+                      <Gift size={10} /> Buy {buyXGetYSettings.buyQty} Get {buyXGetYSettings.freeQty} Free
+                    </span>
+                  );
+                }
+                return null;
+              })()}
               {/* Wishlist Heart */}
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
                 <WishlistButton productId={product.id} />

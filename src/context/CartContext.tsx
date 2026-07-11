@@ -17,6 +17,13 @@ export type CartItem = {
 
 export type Coupon = { code: string; discount: number };
 
+export type BuyXGetYSettings = {
+  enabled: boolean;
+  buyQty: number;
+  freeQty: number;
+  minPrice: number;
+};
+
 interface CartContextType {
   items: CartItem[];
   addToCart: (product: any, quantity?: number) => void;
@@ -31,6 +38,8 @@ interface CartContextType {
   redeemedCoins: number;
   setRedeemedCoins: (coins: number) => void;
   coinDiscountAmount: number;
+  buyXGetYDiscount: number;
+  buyXGetYSettings: BuyXGetYSettings;
   discountedTotal: number;
 }
 
@@ -42,8 +51,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [redeemedCoins, setRedeemedCoins] = useState(0);
   const [coinsPerRupeeDiscount, setCoinsPerRupeeDiscount] = useState(5);
+  const [buyXGetYSettings, setBuyXGetYSettings] = useState<BuyXGetYSettings>({
+    enabled: false,
+    buyQty: 2,
+    freeQty: 1,
+    minPrice: 200,
+  });
 
-  // Fetch dynamic coin settings
+  // Fetch dynamic settings (coins + buy X get Y)
   useEffect(() => {
     async function loadSettings() {
       try {
@@ -51,6 +66,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (res.ok) {
           const data = await res.json();
           setCoinsPerRupeeDiscount(Number(data.coinsPerRupeeDiscount) || 5);
+          setBuyXGetYSettings({
+            enabled: data.buyXGetYEnabled ?? false,
+            buyQty: Number(data.buyXGetYBuyQty) || 2,
+            freeQty: Number(data.buyXGetYFreeQty) || 1,
+            minPrice: Number(data.buyXGetYMinPrice) || 200,
+          });
         }
       } catch (e) {}
     }
@@ -178,9 +199,42 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return sum + numericPrice * item.quantity;
   }, 0);
 
+  // Buy X Get Y Free discount calculation
+  const buyXGetYDiscount = (() => {
+    if (!buyXGetYSettings.enabled) return 0;
+    const { buyQty, freeQty, minPrice } = buyXGetYSettings;
+    const groupSize = buyQty + freeQty;
+
+    // Expand cart items into a flat list of unit prices, filtered by minPrice
+    const qualifyingPrices: number[] = [];
+    for (const item of items) {
+      const unitPrice = parseFloat(item.price.replace(/[^\d.]/g, "")) || 0;
+      if (unitPrice >= minPrice) {
+        for (let i = 0; i < item.quantity; i++) {
+          qualifyingPrices.push(unitPrice);
+        }
+      }
+    }
+
+    if (qualifyingPrices.length < groupSize) return 0;
+
+    // Sort ascending (cheapest first) so the cheapest items become free
+    qualifyingPrices.sort((a, b) => a - b);
+
+    let discount = 0;
+    const fullGroups = Math.floor(qualifyingPrices.length / groupSize);
+    // For each complete group, the first `freeQty` items (cheapest) are free
+    for (let g = 0; g < fullGroups; g++) {
+      for (let f = 0; f < freeQty; f++) {
+        discount += qualifyingPrices[g * groupSize + f];
+      }
+    }
+    return Math.round(discount);
+  })();
+
   const discountAmount = appliedCoupon ? Math.round((totalPrice * appliedCoupon.discount) / 100) : 0;
   const coinDiscountAmount = Math.floor(redeemedCoins / coinsPerRupeeDiscount);
-  const discountedTotal = Math.max(0, totalPrice - discountAmount - coinDiscountAmount);
+  const discountedTotal = Math.max(0, totalPrice - discountAmount - coinDiscountAmount - buyXGetYDiscount);
 
   return (
     <CartContext.Provider
@@ -198,6 +252,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         redeemedCoins,
         setRedeemedCoins,
         coinDiscountAmount,
+        buyXGetYDiscount,
+        buyXGetYSettings,
         discountedTotal,
       }}
     >

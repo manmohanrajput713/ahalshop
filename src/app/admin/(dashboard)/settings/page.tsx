@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Truck, Coins } from "lucide-react";
+import { Save, Truck, Coins, Gift } from "lucide-react";
 
 export default function AdminSettingsPage() {
   const [saved, setSaved] = useState(false);
@@ -12,6 +12,12 @@ export default function AdminSettingsPage() {
   const [shippingFee, setShippingFee] = useState("49");
   const [coinsPerRupeeDiscount, setCoinsPerRupeeDiscount] = useState("5");
   const [rupeesPerCoinEarned, setRupeesPerCoinEarned] = useState("10");
+
+  // Buy X Get Y settings
+  const [buyXGetYEnabled, setBuyXGetYEnabled] = useState(false);
+  const [buyXGetYBuyQty, setBuyXGetYBuyQty] = useState("2");
+  const [buyXGetYFreeQty, setBuyXGetYFreeQty] = useState("1");
+  const [buyXGetYMinPrice, setBuyXGetYMinPrice] = useState("200");
 
   // Load saved settings
   useEffect(() => {
@@ -24,6 +30,10 @@ export default function AdminSettingsPage() {
           setShippingFee(data.shippingFee?.toString() || "49");
           setCoinsPerRupeeDiscount(data.coinsPerRupeeDiscount?.toString() || "5");
           setRupeesPerCoinEarned(data.rupeesPerCoinEarned?.toString() || "10");
+          setBuyXGetYEnabled(data.buyXGetYEnabled ?? false);
+          setBuyXGetYBuyQty(data.buyXGetYBuyQty?.toString() || "2");
+          setBuyXGetYFreeQty(data.buyXGetYFreeQty?.toString() || "1");
+          setBuyXGetYMinPrice(data.buyXGetYMinPrice?.toString() || "200");
         }
       } catch (e) {
         console.error("Failed to load settings:", e);
@@ -41,6 +51,10 @@ export default function AdminSettingsPage() {
         shippingFee: Number(shippingFee),
         coinsPerRupeeDiscount: Number(coinsPerRupeeDiscount),
         rupeesPerCoinEarned: Number(rupeesPerCoinEarned),
+        buyXGetYEnabled,
+        buyXGetYBuyQty: Number(buyXGetYBuyQty),
+        buyXGetYFreeQty: Number(buyXGetYFreeQty),
+        buyXGetYMinPrice: Number(buyXGetYMinPrice),
       };
 
       const res = await fetch("/api/settings", {
@@ -115,6 +129,84 @@ export default function AdminSettingsPage() {
               <p className="text-[10px] text-muted-foreground mt-1">Example: 5 means 5 coins equals ₹1 discount</p>
             </div>
           </div>
+
+          <hr className="border-border" />
+
+          {/* Buy X Get Y Free Offer */}
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 pt-4">
+            <Gift size={18} /> Buy X Get Y Free Offer
+          </h2>
+
+          {/* Enable/Disable Toggle */}
+          <div className="flex items-center justify-between bg-background rounded-lg p-4 border border-border">
+            <div>
+              <p className="text-sm font-medium text-foreground">Enable Offer</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {buyXGetYEnabled
+                  ? `Active: Buy ${buyXGetYBuyQty}, Get ${buyXGetYFreeQty} Free (products ≥ ₹${buyXGetYMinPrice})`
+                  : "Offer is currently disabled"}
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={buyXGetYEnabled}
+                onChange={() => setBuyXGetYEnabled(!buyXGetYEnabled)}
+                disabled={isLoading}
+              />
+              <div className={`block w-12 h-6 rounded-full transition-colors ${buyXGetYEnabled ? "bg-primary" : "bg-muted border border-border"}`}></div>
+              <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${buyXGetYEnabled ? "translate-x-6" : ""}`}></div>
+            </label>
+          </div>
+
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 transition-opacity ${buyXGetYEnabled ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
+            <div>
+              <label className={labelClass}>Buy Quantity</label>
+              <input
+                type="number"
+                min="1"
+                value={buyXGetYBuyQty}
+                onChange={(e) => setBuyXGetYBuyQty(e.target.value)}
+                className={inputClass}
+                disabled={isLoading || !buyXGetYEnabled}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">How many items the customer must buy</p>
+            </div>
+            <div>
+              <label className={labelClass}>Free Quantity</label>
+              <input
+                type="number"
+                min="1"
+                value={buyXGetYFreeQty}
+                onChange={(e) => setBuyXGetYFreeQty(e.target.value)}
+                className={inputClass}
+                disabled={isLoading || !buyXGetYEnabled}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">How many items become free</p>
+            </div>
+            <div>
+              <label className={labelClass}>Min Product Price (₹)</label>
+              <input
+                type="number"
+                min="0"
+                value={buyXGetYMinPrice}
+                onChange={(e) => setBuyXGetYMinPrice(e.target.value)}
+                className={inputClass}
+                disabled={isLoading || !buyXGetYEnabled}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Only products priced ≥ this amount qualify</p>
+            </div>
+          </div>
+
+          {buyXGetYEnabled && (
+            <div className="bg-accent/5 border border-accent/20 rounded-lg p-4 text-sm text-foreground">
+              <p className="font-medium mb-1">Preview:</p>
+              <p className="text-muted-foreground text-xs">
+                Customer adds <strong>{Number(buyXGetYBuyQty) + Number(buyXGetYFreeQty)}</strong> items (each ≥ ₹{buyXGetYMinPrice}) → the <strong>{buyXGetYFreeQty}</strong> cheapest {Number(buyXGetYFreeQty) === 1 ? "item is" : "items are"} free.
+              </p>
+            </div>
+          )}
       </div>
     </div>
   );
