@@ -91,6 +91,11 @@ export default function Header() {
         triggerAuthToast(`Welcome back, ${newUser.email}`, "login");
       }
 
+      // Clear the access token hash from the URL to keep it clean
+      if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+
       prevUserRef.current = newUser;
     });
 
